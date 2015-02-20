@@ -52,6 +52,7 @@
 }
 .status {
     border-left-style: none;
+    border-bottom-style: none;
     bottom: 0;
     /*background-color: blue;*/
 }

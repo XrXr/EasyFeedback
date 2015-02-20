@@ -23,7 +23,6 @@ angular.module("easyFeedback")
             }
             number_length++;
         }
-        console.log(str, number_length, column)
         return number_length;
     }
 });
