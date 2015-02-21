@@ -7,7 +7,7 @@ angular.module("easyFeedback")
         });
     };
 })
-.controller("WorksheetUpload", function ($scope) {
+.controller("WorksheetUpload", function ($scope, $upload) {
     $scope.text = "Drag and drop worksheet here or click to select file";
     $scope.upload_mode = false;
     $scope.current_status = "Uploading worksheet...";
@@ -20,13 +20,18 @@ angular.module("easyFeedback")
             return style;
         };
     })();
-    $scope.upload_percentage(80);
     $scope.file_dropped = function (files, _, rejected_files) {
         if (rejected_files.length > 0) {
             $scope.text = "Worksheet must be a csv file";
             return;
         }
         var upload = files[0];
+        $upload.upload({
+            url: "/upload_worksheet",
+            file: upload
+        }).progress(function(evt) {
+            $scope.upload_percentage(100.0 * evt.loaded / evt.total);
+        });
         $scope.upload_mode = true;
     };
 });
