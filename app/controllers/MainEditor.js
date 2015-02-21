@@ -20,8 +20,7 @@ angular.module("easyFeedback")
             Util.extract_numrange(target_line, selected.row, selected.column));
     };
     $timeout(wait_for_editor, 0);
-    window.ngDialog = ngDialog;
-    ngDialog.open({ template: "partials/templatePicker.html", class: "ngdialog-theme-default" });
+    // ngDialog.open({ template: "app/partials/templatePicker.html", className: "ngdialog-theme-default template-modal" });
     function wait_for_editor () {
         var editor = $scope.editor;
         var session = editor.getSession();

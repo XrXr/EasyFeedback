@@ -1,1 +1,1 @@
-angular.module("easyFeedback", ['ngDialog']);
+angular.module("easyFeedback", ["ngDialog", "angularFileUpload"]);

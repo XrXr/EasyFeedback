@@ -1,0 +1,9 @@
+<div class="file-dropper well" ng-file-drop ng-file-select ng-model="files" allow-dir="false" ng-file-change="file_dropped($files, $event, $rejectedFiles)" accept=".csv" ng-if="!upload_mode">
+  <span ng-bind="text"></span>
+</div>
+<div ng-if="upload_mode">
+  <div class="progress upload-progress">
+    <div class="progress-bar" role="progressbar" ng-style="upload_percentage()"></div>
+  </div>
+  <div class="spinner upload-spinner"></div><div class="upload-status" ng-bind="current_status"></div>
+</div>
