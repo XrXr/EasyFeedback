@@ -1,1 +1,1 @@
-angular.module("easyFeedback", []);
+angular.module("easyFeedback", ['ngDialog']);

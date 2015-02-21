@@ -63,3 +63,29 @@
     left: 50%;
     /*background-color: green;*/
 }
+
+.divider {
+    width: 100%;
+    height: 1px;
+    margin: 8px 1px;
+    overflow: hidden;
+    background-color: #E5E5E5;
+    border-bottom: 1px solid #FFF;
+    transform: rotate(90deg);
+    transform-origin: 0 0;
+    position: absolute;
+}
+
+.template-container {
+    display: flex;
+    height: 100%;
+    justify-content: space-around;
+}
+
+.template-result-block {
+    width: 15%
+}
+
+.template-preview-block {
+    width: 30%
+}

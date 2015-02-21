@@ -1,5 +1,5 @@
 angular.module("easyFeedback")
-.controller("MainEditor", function ($scope, $timeout, $rootScope, Util, TemplateManager) {
+.controller("MainEditor", function ($scope, $timeout, $rootScope, Util, TemplateManager, ngDialog) {
     $scope.anchor_list = [];
     $scope.jump_to_next = function () {
         var editor = $scope.editor;
@@ -20,6 +20,8 @@ angular.module("easyFeedback")
             Util.extract_numrange(target_line, selected.row, selected.column));
     };
     $timeout(wait_for_editor, 0);
+    window.ngDialog = ngDialog;
+    ngDialog.open({ template: "partials/templatePicker.html", class: "ngdialog-theme-default" });
     function wait_for_editor () {
         var editor = $scope.editor;
         var session = editor.getSession();
