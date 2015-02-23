@@ -1,2 +1,5 @@
 <button type="button" ng-click="upload_modal()" class="btn btn-primary margin-right">Upload Worksheet</button><button type="button" disabled="true" class="btn btn-success">Download Results</button>
-<div ng-if="true">No active marking session, please upload a worksheet</div>
+<div ng-if="error_message === 'No worksheet uploaded'">No active marking session, please upload a worksheet</div>
+<div ng-repeat="student in student_list">
+    <div>Name: <span ng-bind="student.name"></span>  Student Number: <span ng-bind="student.student_number"></span></div>
+</div>

@@ -37,6 +37,7 @@
     height: calc(50% - 20px);
     border: 2px solid grey;
     padding: 10px;
+    overflow: auto;
 }
 
 .editor {
