@@ -1,5 +1,9 @@
-<button type="button" ng-click="upload_modal()" class="btn btn-primary margin-right">Upload Worksheet</button><button type="button" disabled="true" class="btn btn-success">Download Results</button>
+<button type="button" ng-click="upload_modal()" class="btn btn-primary margin-right">Upload Worksheet</button><button type="button" ng-disabled="error_message" ng-click="render_worksheet()" class="btn btn-success">Download Results</button>
 <div ng-if="error_message === 'No worksheet uploaded'">No active marking session, please upload a worksheet</div>
-<div ng-repeat="student in student_list">
-    <div>Name: <span ng-bind="student.name"></span>  Student Number: <span ng-bind="student.student_number"></span></div>
+<div ng-if="!error_message">
+  <div>Currently grading: <span ng-bind="storage.get_current().name"></span></div>
+  <div>Grading student number {{storage.get_index() + 1}} out of {{storage.get_total()}}</div>
 </div>
+<!-- <div ng-repeat="student in student_list">
+  <div>Name: <span ng-bind="student.name"></span>  Student Number: <span ng-bind="student.student_number"></span></div>
+</div> -->

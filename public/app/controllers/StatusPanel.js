@@ -1,10 +1,19 @@
 angular.module("easyFeedback")
-.controller("StatusPanel", function ($scope, ngDialog, $http) {
+.controller("StatusPanel", function ($scope, ngDialog, $http,
+                                     FeedbackStorage) {
+    $scope.storage = FeedbackStorage;
     $scope.upload_modal = function () {
         ngDialog.open({
             template: "app/partials/worksheetUpload.html",
             controller: "WorksheetUpload"
         }).closePromise.then(update_data);
+    };
+    $scope.render_worksheet = function () {
+        var link = document.createElement('a');
+        link.href = '/render_worksheet';
+        var e = document.createEvent('MouseEvents');
+        e.initEvent('click' ,true ,true);
+        link.dispatchEvent(e);
     };
     update_data();
     function update_data () {
@@ -15,12 +24,12 @@ angular.module("easyFeedback")
                 $scope.error_message = data.error;
                 return;
             }
-            $scope.student_list = data.student_list;
+            FeedbackStorage.update_data(data.student_list);
             // this callback will be called asynchronously
             // when the response is available
         }).error(function (data) {
             console.log(data)
-            $scope.show_error = "An internal error has occoured";
+            $scope.error_message = "An internal error has occoured";
         });
     }
 })

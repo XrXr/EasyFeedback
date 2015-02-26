@@ -16,6 +16,7 @@
     "multiparty": "^4.1.1",
     "typeis": "^0.1.1",
     "babyparse": "^0.4.1",
-    "express-session": "~1.10.3"
+    "express-session": "~1.10.3",
+    "marked": "~0.3.3"
   }
 }

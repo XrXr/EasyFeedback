@@ -1,5 +1,7 @@
 angular.module("easyFeedback")
-.controller("MainEditor", function ($scope, $timeout, $rootScope, Util, TemplateManager, ngDialog) {
+.controller("MainEditor",
+            function ($scope, $timeout, $rootScope, Util, TemplateManager,
+                      ngDialog, FeedbackStorage) {
     $scope.anchor_list = [];
     $scope.jump_to_next = function () {
         var editor = $scope.editor;
@@ -19,6 +21,15 @@ angular.module("easyFeedback")
         editor.selection.setSelectionRange(
             Util.extract_numrange(target_line, selected.row, selected.column));
     };
+    $scope.advance = function () {
+        var total_anchor = $scope.total_anchor;
+        var session = $scope.editor.getSession();
+        var target_line = session.getLine(total_anchor.row);
+        var total = Util.extract_num(target_line, total_anchor.column);
+        FeedbackStorage.advance($scope.editor.getValue(), total);
+        reset_editor();
+    };
+    var update_total_fn;
     $timeout(wait_for_editor, 0);
     // ngDialog.open({ template: "app/partials/templatePicker.html", className: "ngdialog-theme-default template-modal" });
     function wait_for_editor () {
@@ -28,16 +39,11 @@ angular.module("easyFeedback")
         editor.on("change", function () {
             $rootScope.$emit("mainEditorChange", editor.getValue());
         });
-        var raw_template = 'Grade: $total/25\n\n- Q1: $entry/5\n- Q2: $entry/5\n- Q3: $entry/5\n- Q4: $entry/5\n- Q5: $entry/5';
-        var parsed = TemplateManager.parse(raw_template);
-        session.setValue(parsed.text);
-        $scope.anchor_list = parsed.anchors.entry.map(function (e) {
-            return doc.createAnchor(e[0], e[1]);
-        });
-        var total_anchor = doc.createAnchor.apply(doc, parsed.anchors.total[0]);
-        editor.on("change", function update_total () {
+        reset_editor();
+        update_total_fn = function update_total () {
             $timeout(function () {
                 var total = 0;
+                var total_anchor = $scope.total_anchor;
                 $scope.anchor_list.forEach(function (anchor) {
                     total += Util.extract_num(session.getLine(anchor.row),
                                               anchor.column);
@@ -55,6 +61,26 @@ angular.module("easyFeedback")
                 }, 0);
                 editor.on("change", update_total);
             }, 0);
+        };
+        editor.on("change", update_total_fn);
+    }
+
+    function reset_editor (first) {
+        var editor = $scope.editor;
+        var session = editor.getSession();
+        var doc = session.getDocument();
+        var raw_template = 'Grade: $total/25\n\n- Q1: $entry/5\n- Q2: $entry/5\n- Q3: $entry/5\n- Q4: $entry/5\n- Q5: $entry/5';
+        var parsed = TemplateManager.parse(raw_template);
+        editor.off("change", update_total_fn);
+        session.setValue(parsed.text);
+        $scope.anchor_list = parsed.anchors.entry.map(function (e) {
+            return doc.createAnchor(e[0], e[1]);
         });
+        $scope.total_anchor =
+            doc.createAnchor.apply(doc, parsed.anchors.total[0]);
+        if (update_total_fn) {
+            editor.on("change", update_total_fn);
+        }
+        return $scope.total_anchor;
     }
 });
