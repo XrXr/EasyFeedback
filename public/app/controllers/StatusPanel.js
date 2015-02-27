@@ -17,6 +17,7 @@ angular.module("easyFeedback")
     };
     update_data();
     function update_data () {
+        //  TODO: add loading spinner
         $http.get("/get_status").success(function(data, status) {
             console.log(data)
             $scope.error_message = "";
@@ -24,7 +25,8 @@ angular.module("easyFeedback")
                 $scope.error_message = data.error;
                 return;
             }
-            FeedbackStorage.update_data(data.student_list);
+            FeedbackStorage.
+                update_data(data.student_list, data.last_index + 1);
             // this callback will be called asynchronously
             // when the response is available
         }).error(function (data) {

@@ -17,7 +17,9 @@ app.set('view engine', 'jade');
 
 var session_options = {
     name: "__ef",
-    secret: "good luck with this endeavor!"
+    secret: "good luck with this endeavor!",
+    resave: false,
+    saveUninitialized: false
 };
 
 // uncomment after placing your favicon in /public
