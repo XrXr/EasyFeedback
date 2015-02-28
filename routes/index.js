@@ -33,7 +33,8 @@ router.get("/get_status", function (req, res) {
             last_index: req.session.last_index
         });
     }
-    return fs.readFile(req.session.worksheet.path, "utf-8", parse_csv);
+    var tmp_file_path = req.session.worksheet.path; 
+    return fs.readFile(tmp_file_path, "utf-8", parse_csv);
 
     function parse_csv (err, data) {
         if (err) {
@@ -62,7 +63,7 @@ router.get("/get_status", function (req, res) {
             return student;
         });
         req.session.student_list = student_list;
-        // TODO: delete the file
+        fs.unlink(tmp_file_path);  // remove the temporary file
         return res.json({student_list: student_list});
     }
 });
