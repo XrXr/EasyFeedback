@@ -4,6 +4,9 @@
   <div>Currently grading: <span ng-bind="storage.get_current().name"></span></div>
   <div>Grading student number {{storage.get_index() + 1}} out of {{storage.get_total()}}</div>
 </div>
+<div ng-repeat="student in skipped_students">
+  <div>{{student.name}} skipped due to no submission</div>
+</div>
 <!-- <div ng-repeat="student in student_list">
   <div>Name: <span ng-bind="student.name"></span>  Student Number: <span ng-bind="student.student_number"></span></div>
 </div> -->

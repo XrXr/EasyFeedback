@@ -45,16 +45,23 @@ router.get("/get_status", function (req, res) {
             return send_error(res, "Bad worksheet");
         }
         csv.shift();   // the first line does not contain any info
-        var student_list = csv.map(function (row) {
-            return {
+        req.session.orignal_csv = csv;
+        var no_submission = /No submission/g;
+        var student_list = csv.map(function (row, index) {
+            var student = {
                 name: row[1],
                 // the first column always start with "Participant ", the rest
                 // is the student number
                 student_number: row[0].slice(12)
             };
+            if (row[3].search(no_submission) !== -1) {
+                student.not_submitted = true;
+                student.grade = 0;
+                req.session.orignal_csv[index][4] = 0;
+            }
+            return student;
         });
         req.session.student_list = student_list;
-        req.session.orignal_csv = csv;
         // TODO: delete the file
         return res.json({student_list: student_list});
     }

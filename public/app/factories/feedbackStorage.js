@@ -11,18 +11,28 @@ angular.module("easyFeedback")
                 current_index = new_index;
             }
         },
+        /**
+          Advance the current student index and send feedback to the server
+          @param {string} feedback - The student's feedback to send
+          @param {number} grade - The student's grade
+          @return {array} array of students skipped due to no submission
+        */
         advance: function (feedback, grade) {
-            var student = students[current_index];
-            student.feedback = feedback;
-            student.grade = grade;
+            var to_send = students[current_index];
+            to_send.feedback = feedback;
+            to_send.grade = grade;
+            maybe_advance_index();
+            var skipped = [];
+            while (students[current_index].not_submitted &&
+                   current_index !== students.length - 1) {
+                skipped.push(students[current_index]);
+                maybe_advance_index();
+            }
             $http.post("/new_feedback", {
-                student: student,
+                student: to_send,
                 new_index: current_index
             });  // TODO: add mechanism for request status
-                 // TODO: send over index
-            if (current_index + 1 < students.length) {
-                current_index++;
-            }
+            return skipped;
         },
         get_current: function () {
             return students[current_index];
@@ -34,4 +44,9 @@ angular.module("easyFeedback")
             return current_index;
         }
     };
+    function maybe_advance_index () {
+        if (current_index + 1 < students.length) {
+            current_index++;
+        }
+    }
 });

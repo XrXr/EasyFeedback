@@ -26,7 +26,8 @@ angular.module("easyFeedback")
         var session = $scope.editor.getSession();
         var target_line = session.getLine(total_anchor.row);
         var total = Util.extract_num(target_line, total_anchor.column);
-        FeedbackStorage.advance($scope.editor.getValue(), total);
+        $rootScope.$emit("students_skipped",
+            FeedbackStorage.advance($scope.editor.getValue(), total));
         reset_editor();
     };
     var update_total_fn;

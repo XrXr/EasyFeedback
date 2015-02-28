@@ -1,7 +1,8 @@
 angular.module("easyFeedback")
 .controller("StatusPanel", function ($scope, ngDialog, $http,
-                                     FeedbackStorage) {
+                                     FeedbackStorage, $rootScope) {
     $scope.storage = FeedbackStorage;
+    $scope.skipped_students = [];
     $scope.upload_modal = function () {
         ngDialog.open({
             template: "app/partials/worksheetUpload.html",
@@ -15,6 +16,9 @@ angular.module("easyFeedback")
         e.initEvent('click' ,true ,true);
         link.dispatchEvent(e);
     };
+    $rootScope.$on("students_skipped", function (_, students) {
+        $scope.skipped_students = students;
+    });
     update_data();
     function update_data () {
         //  TODO: add loading spinner
@@ -26,7 +30,7 @@ angular.module("easyFeedback")
                 return;
             }
             FeedbackStorage.
-                update_data(data.student_list, data.last_index + 1);
+                update_data(data.student_list, data.last_index);
             // this callback will be called asynchronously
             // when the response is available
         }).error(function (data) {
@@ -35,7 +39,7 @@ angular.module("easyFeedback")
         });
     }
 })
-.controller("WorksheetUpload", function ($scope, $upload) {
+.controller("WorksheetUpload", function ($scope, $upload, $rootScope) {
     $scope.text = "Drag and drop worksheet here or click to select file";
     $scope.upload_mode = false;
     $scope.current_status = "Uploading worksheet...";
