@@ -53,7 +53,9 @@ router.get("/get_status", function (req, res) {
                 name: row[1],
                 // the first column always start with "Participant ", the rest
                 // is the student number
-                student_number: row[0].slice(12)
+                student_number: row[0].slice(12),
+                feedback: row[9],
+                grade: row[4]
             };
             if (row[3].search(no_submission) !== -1) {
                 student.not_submitted = true;

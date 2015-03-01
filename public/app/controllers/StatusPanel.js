@@ -29,10 +29,8 @@ angular.module("easyFeedback")
                 $scope.error_message = data.error;
                 return;
             }
-            FeedbackStorage.
-                update_data(data.student_list, data.last_index);
-            // this callback will be called asynchronously
-            // when the response is available
+            $scope.skipped_students = FeedbackStorage.update_data(
+                                        data.student_list, data.last_index);
         }).error(function (data) {
             console.log(data)
             $scope.error_message = "An internal error has occoured";
