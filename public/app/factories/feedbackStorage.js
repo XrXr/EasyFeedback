@@ -20,12 +20,14 @@ angular.module("easyFeedback")
         */
         advance: function (feedback, grade) {
             var to_send = students[current_index];
+            var student_index = current_index;
             to_send.feedback = feedback;
             to_send.grade = grade;
             maybe_advance_index();
             var skipped = skip_until_valid();
             $http.post("/new_feedback", {
                 student: to_send,
+                student_index: student_index,
                 new_index: current_index
             });  // TODO: add mechanism for request status
             return skipped;

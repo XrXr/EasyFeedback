@@ -33,7 +33,7 @@ router.get("/get_status", function (req, res) {
             last_index: req.session.last_index
         });
     }
-    var tmp_file_path = req.session.worksheet.path; 
+    var tmp_file_path = req.session.worksheet.path;
     return fs.readFile(tmp_file_path, "utf-8", parse_csv);
 
     function parse_csv (err, data) {
@@ -72,7 +72,7 @@ router.get("/get_status", function (req, res) {
 
 router.post("/new_feedback", function (req, res) {
     var student = req.body.student;
-    var index = req.body.new_index;
+    var index = req.body.student_index;
     if (!req.session.student_list) {
         return send_error(res, "Update without list");
     }
@@ -81,7 +81,7 @@ router.post("/new_feedback", function (req, res) {
         return send_error(res, "Bad request");
     }
     //  TODO: add error checking here
-    req.session.last_index = index;
+    req.session.last_index = req.body.new_index;
     req.session.student_list[index].feedback = student.feedback;
     req.session.student_list[index].grade = student.grade;
     req.session.orignal_csv[index][9] = student.feedback;
