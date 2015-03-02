@@ -41,6 +41,7 @@ angular.module("easyFeedback")
             $rootScope.$emit("mainEditorChange", editor.getValue());
         });
         reset_editor();
+        var deduction = /^(?!\s*-\s*).*(?:\(-(\d+)\))$/;
         update_total_fn = function update_total () {
             $timeout(function () {
                 var total = 0;
@@ -50,6 +51,15 @@ angular.module("easyFeedback")
                                               anchor.column);
                 });
                 var target_line = session.getLine(total_anchor.row);
+                var total_lines = session.getLength();
+                for (var i = 0; i < total_lines; i++) {
+                    var line = session.getLine(i);
+                    var match = deduction.exec(line);
+                    if (match) {
+                        // This will always work due to the regex
+                        total -= Number(match[1]);
+                    }
+                }
                 if (Util.extract_num(target_line,
                                      total_anchor.column) === total) {
                     return;
