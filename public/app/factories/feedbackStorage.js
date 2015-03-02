@@ -1,5 +1,7 @@
 angular.module("easyFeedback")
 .factory("FeedbackStorage", function ($http) {
+    var total_submitted = 0;
+    var total_graded = 0;
     var current_index = 0;
     var students = [];
     return {
@@ -9,6 +11,16 @@ angular.module("easyFeedback")
             if (angular.isDefined(new_index) && new_index >= 0 &&
                 new_index < new_data.length) {
                 current_index = new_index;
+            }
+            for (var i = 0; i < students.length; i++) {
+                var current_student = students[i];
+                if (current_student.not_submitted) {
+                    continue;
+                }
+                if (is_graded(current_student)) {
+                    total_graded++;
+                }
+                total_submitted++;
             }
             return skip_until_valid();
         },
@@ -20,6 +32,10 @@ angular.module("easyFeedback")
         */
         advance: function (feedback, grade) {
             var to_send = students[current_index];
+            if (!is_graded(to_send)) {
+                // only increment when it was not graded before
+                total_graded++;
+            }
             var student_index = current_index;
             to_send.feedback = feedback;
             to_send.grade = grade;
@@ -40,6 +56,12 @@ angular.module("easyFeedback")
         },
         get_index: function () {
             return current_index;
+        },
+        get_total_graded: function () {
+            return total_graded;
+        },
+        get_total_submitted: function () {
+            return total_submitted;
         }
     };
     function maybe_advance_index () {
@@ -57,11 +79,10 @@ angular.module("easyFeedback")
         var skipped = [];
         while (current_index !== students.length - 1) {
             var current_student = students[current_index];
-            var grade = current_student.grade;
             var skip_obj = null;
             if (current_student.not_submitted) {
                 skip_obj = Skipped(current_student, "no submission");
-            } else if (angular.isDefined(grade) && grade !== "") {
+            } else if (is_graded(current_student)) {
                 skip_obj = Skipped(current_student, "already graded");
             }
             if (skip_obj === null) {
@@ -71,5 +92,10 @@ angular.module("easyFeedback")
             maybe_advance_index();
         }
         return skipped;
+    }
+
+    function is_graded (student) {
+        var grade = student.grade;
+        return angular.isDefined(grade) && grade !== "";
     }
 });
