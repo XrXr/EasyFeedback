@@ -13,8 +13,14 @@ angular.module("easyFeedback")
         var link = document.createElement('a');
         link.href = '/render_worksheet';
         var e = document.createEvent('MouseEvents');
-        e.initEvent('click' ,true ,true);
+        e.initEvent('click', true, true);
         link.dispatchEvent(e);
+    };
+    // TODO: add warning about imported csv don't have tab jumps
+    $scope.view_feedback = function (student_index) {
+        var student = FeedbackStorage.students[student_index];
+        FeedbackStorage.current_index = student_index;
+        $rootScope.$emit("view_feedback", student);
     };
     $rootScope.$on("students_skipped", function (_, students) {
         $scope.skipped_students = students;

@@ -30,7 +30,7 @@ angular.module("easyFeedback")
           @param {number} grade - The student's grade
           @return {array} array of students skipped due to no submission
         */
-        advance: function (feedback, grade) {
+        advance: function (feedback, grade, anchors) {
             var to_send = students[current_index];
             if (!is_graded(to_send)) {
                 // only increment when it was not graded before
@@ -39,12 +39,13 @@ angular.module("easyFeedback")
             var student_index = current_index;
             to_send.feedback = feedback;
             to_send.grade = grade;
+            to_send.anchors = anchors;
             maybe_advance_index();
             var skipped = skip_until_valid();
             $http.post("/new_feedback", {
                 student: to_send,
                 student_index: student_index,
-                new_index: current_index
+                new_index: current_index,
             });  // TODO: add mechanism for request status
             return skipped;
         },
@@ -54,15 +55,22 @@ angular.module("easyFeedback")
         get_total: function () {
             return students.length;
         },
-        get_index: function () {
-            return current_index;
-        },
         get_total_graded: function () {
             return total_graded;
         },
         get_total_submitted: function () {
             return total_submitted;
-        }
+        },
+        get students() {
+            return students;
+        },
+        get current_index () {
+            return current_index;
+        },
+        set current_index(i) {
+            current_index = i;
+        },
+        is_graded: is_graded
     };
     function maybe_advance_index () {
         if (current_index + 1 < students.length) {

@@ -5,8 +5,8 @@ angular.module("easyFeedback")
     };
     /**
      * Parse a raw template into normal Markdown
-     * @param {string} raw_template - The template to parse. Different lines are
-     * separated by \n
+     * @param {string} raw_template - The template to parse. Different lines
+     * are separated by \n
      * @return {Object} An object that has two properties, text, anchors that
      * contains the parsed text and positions for making the anchors. anchors
      * contain two properties total and entry.

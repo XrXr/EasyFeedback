@@ -82,8 +82,10 @@ router.post("/new_feedback", function (req, res) {
     }
     //  TODO: add error checking here
     req.session.last_index = req.body.new_index;
+    // TODO: clean here
     req.session.student_list[index].feedback = student.feedback;
     req.session.student_list[index].grade = student.grade;
+    req.session.student_list[index].anchors = student.anchors;
     req.session.orignal_csv[index][9] = student.feedback;
     req.session.orignal_csv[index][4] = student.grade;
     res.type("text/plain").end();
