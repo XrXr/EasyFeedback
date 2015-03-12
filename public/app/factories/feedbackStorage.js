@@ -12,6 +12,8 @@ angular.module("easyFeedback")
                 new_index < new_data.length) {
                 current_index = new_index;
             }
+            total_graded = 0;
+            total_submitted = 0;
             for (var i = 0; i < students.length; i++) {
                 var current_student = students[i];
                 if (current_student.not_submitted) {
