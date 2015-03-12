@@ -79,6 +79,8 @@ angular.module("easyFeedback")
                         total -= Number(match[1]);
                     }
                 }
+                // negative grade doesn't make sense
+                total = Math.max(0, total);
                 if (Util.extract_num(target_line,
                                      total_anchor.column) === total) {
                     return;
@@ -100,7 +102,7 @@ angular.module("easyFeedback")
         var editor = $scope.editor;
         var session = editor.getSession();
         var doc = session.getDocument();
-        var raw_template = 'Grade: $total/25\n\n- Q1: $entry/2\n- Q2: $entry/2\n- Q3: $entry/3\n- Q4: $entry/2\n- Q5: $entry/4\n- Q6: $entry/6\n- Q7: $entry/6\n\nGraded by Alan Wu';
+        var raw_template = 'Grade: $total/40\n\n- Q8: $entry/25\n- Q9: $entry/15\n\nGraded by Alan Wu';
         var parsed = TemplateManager.parse(raw_template);
         editor.off("change", update_total_fn);
         session.setValue(parsed.text);
