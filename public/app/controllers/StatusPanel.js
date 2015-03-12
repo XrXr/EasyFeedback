@@ -19,8 +19,18 @@ angular.module("easyFeedback")
     // TODO: add warning about imported csv don't have tab jumps
     $scope.view_feedback = function (student_index) {
         var student = FeedbackStorage.students[student_index];
+        console.log(student);
         FeedbackStorage.current_index = student_index;
         $rootScope.$emit("view_feedback", student);
+    };
+    $scope.student_status = function (student) {
+        if (student.not_submitted) {
+            return "Not Submitted";
+        }
+        if (FeedbackStorage.is_graded(student)) {
+            return "Graded";
+        }
+        return "Needs Grading";
     };
     $rootScope.$on("students_skipped", function (_, students) {
         $scope.skipped_students = students;

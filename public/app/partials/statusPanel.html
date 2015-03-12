@@ -5,12 +5,13 @@
   <div>Grading student number {{storage.current_index + 1}} out of {{storage.get_total()}}</div>
   <div>Graded {{storage.get_total_graded()}} out of {{storage.get_total_submitted()}}</div>
 </div>
-<div ng-repeat="skipped in skipped_students">
+<!-- <div ng-repeat="skipped in skipped_students">
   <div ng-switch on="skipped.reason">{{skipped.student.name}} <span ng-switch-when="no submission">skipped due to no submission</span><span ng-switch-when="already graded"h>is already graded (skipped)</span><span ng-switch-default>skipped</span></div>
-</div>
-<select class="form-control" style="height:55%" multiple ng-if="storage.students.length">
+</div> -->
+<select-box ng-if="storage.students.length" on-change="view_feedback" select-class="highlight" bind-property="name" content="storage.students" selected="storage.current_index" status-fn="student_status"></select-box>
+<!-- <select class="form-control" style="height:55%" multiple ng-if="storage.students.length">
   <option ng-selected="$index === storage.current_index" ng-repeat="student in storage.students" ng-click="view_feedback($index)">{{student.name}}</option>
-</select>
+</select> -->
 <!-- <div ng-repeat="student in student_list">
   <div>Name: <span ng-bind="student.name"></span>  Student Number: <span ng-bind="student.student_number"></span></div>
 </div> -->
