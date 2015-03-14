@@ -22,8 +22,5 @@ angular.module("easyFeedback")
             }
         };
         scope.$watch("selected", scope.optionClicked);
-        elem.ready(function () {
-            scope.optionClicked(0);
-        });
     }
 });

@@ -19,7 +19,6 @@ angular.module("easyFeedback")
     // TODO: add warning about imported csv don't have tab jumps
     $scope.view_feedback = function (student_index) {
         var student = FeedbackStorage.students[student_index];
-        console.log(student);
         FeedbackStorage.current_index = student_index;
         $rootScope.$emit("view_feedback", student);
     };
@@ -47,6 +46,7 @@ angular.module("easyFeedback")
             }
             $scope.skipped_students = FeedbackStorage.update_data(
                                         data.student_list, data.last_index);
+            $scope.view_feedback(FeedbackStorage.current_index);
         }).error(function (data) {
             console.log(data)
             $scope.error_message = "An internal error has occoured";
