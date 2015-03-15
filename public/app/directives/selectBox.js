@@ -10,7 +10,8 @@ angular.module("easyFeedback")
         scope.bindProperty = attrs.bindProperty;
         scope.elems = scope.content();
         var selectClass = attrs.selectClass;
-        scope.optionClicked = function (i, old) {
+        scope.selection_changed = function (i, old) {
+            var well = elem.children()[0];
             var inner = elem.children().children();
             if (inner[i]) {
                 var old_selected =
@@ -19,8 +20,16 @@ angular.module("easyFeedback")
                 inner[i].classList.add(selectClass);
                 scope.onChange()(i);
                 scope.selected = i;
+
+                var target = inner[i].getBoundingClientRect();
+                var well_rect = well.getBoundingClientRect();
+                // scroll the selection to the top if not visible
+                if (target.y < well_rect.y ||
+                    target.y > well_rect.y + well_rect.height) {
+                    well.scrollBy(0, target.y - well_rect.y);
+                }
             }
         };
-        scope.$watch("selected", scope.optionClicked);
+        scope.$watch("selected", scope.selection_changed);
     }
 });

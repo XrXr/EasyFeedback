@@ -1,5 +1,5 @@
 <div class="well select-box">
-<div ng-repeat="e in elems" ng-switch="statusFn()(e)" ng-click="optionClicked($index)" class="select-box-entry">
+<div ng-repeat="e in elems" ng-switch="statusFn()(e)" ng-click="selection_changed($index)" class="select-box-entry">
     <span class="select-box-data" ng-bind="e[bindProperty]"></span><span ng-switch-when="Graded" style="background-color: greenyellow;" class="status-badge">Graded</span><span ng-switch-when="Needs Grading" style="background-color: #E7DC5E;" class="status-badge">Needs Grading</span><span ng-switch-when="Not Submitted" style="background-color: gainsboro;" class="status-badge">Not Submitted</span>
 </div>
 </div>
