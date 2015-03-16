@@ -6,8 +6,11 @@ angular.module("easyFeedback")
     };
     function link (scope, elem, attrs) {
         var editor = ace.edit(elem[0]);
-        scope.editor = editor;  // TODO: allow for a call back when loaded
         editor.setShowPrintMargin(false);
         editor.getSession().setMode("ace/mode/markdown");
+        var callback = scope.$eval(attrs.callback);
+        if (callback) {
+            callback(editor);
+        }
     }
 });

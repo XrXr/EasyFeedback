@@ -1,37 +1,7 @@
 angular.module("easyFeedback")
-.controller("MainEditor",
-            function ($scope, $timeout, $rootScope, Util, TemplateManager,
-                      ngDialog, FeedbackStorage) {
+.controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
+                                    TemplateManager, FeedbackStorage) {
     $scope.anchor_list = [];
-    $scope.jump_to_next = function () {
-        var editor = $scope.editor;
-        var anchor_list = $scope.anchor_list;
-        var loc = editor.getCursorPosition();
-        var row = loc.row;
-        var column = loc.column;
-        var selected = anchor_list[0];
-        var i;
-        for (i = 0; i < anchor_list.length; i++) {
-            if (anchor_list[i].row > row) {
-                selected = anchor_list[i];
-                break;
-            }
-        }
-        var target_line = editor.getSession().getLine(selected.row);
-        editor.selection.setSelectionRange(
-            Util.extract_numrange(target_line, selected.row, selected.column));
-    };
-    $scope.advance = function () {
-        var total_anchor = $scope.total_anchor;
-        var session = $scope.editor.getSession();
-        var target_line = session.getLine(total_anchor.row);
-        var total_grade = Util.extract_num(target_line, total_anchor.column);
-        var feedback_text = $scope.editor.getValue();
-        var anchors = deconstruct_anchors($scope.anchor_list, [total_anchor]);
-        $rootScope.$emit("students_skipped",
-            FeedbackStorage.advance(feedback_text, total_grade, anchors));
-        reset_editor();
-    };
     var update_total_fn;
     $rootScope.$on("view_feedback", function (_, student) {
         console.log(student)
@@ -50,16 +20,16 @@ angular.module("easyFeedback")
         $scope.total_anchor = real_anchors[1];
         editor.on("change", update_total_fn);
     });
-    $timeout(wait_for_editor, 0);
-    // ngDialog.open({ template: "app/partials/templatePicker.html", className: "ngdialog-theme-default template-modal" });
-    function wait_for_editor () {
-        var editor = $scope.editor;
+    $scope.on_editor = function (editor) {
         var session = editor.getSession();
         var doc = session.getDocument();
-        editor.on("change", function () {
+        function emit_change () {
             $rootScope.$emit("mainEditorChange", editor.getValue());
-        });
+        }
+        editor.on("change", emit_change);
         reset_editor();
+        // the first reset doesn't fire the event with the value properly
+        $timeout(emit_change, 0);
         var deduction = /^(?!\s*-\s*).*(?:\(-(\d+)\))$/;
         // TODO: this is ugly as heck, pull it out
         update_total_fn = function update_total () {
@@ -96,25 +66,50 @@ angular.module("easyFeedback")
             }, 0);
         };
         editor.on("change", update_total_fn);
-    }
 
-    function reset_editor (first) {
-        //  TODO: these lines are repeated too many times
-        var editor = $scope.editor;
-        var session = editor.getSession();
-        var doc = session.getDocument();
-        var raw_template = 'Grade: $total/25\n\n- Q1: $entry/4\n- Q2: $entry/2\n- Q3: $entry/4\n- Q4: $entry/2\n- Q5: $entry/4\n- Q6: $entry/9\n\nGraded by Alan Wu';
-        var parsed = TemplateManager.parse(raw_template);
-        editor.off("change", update_total_fn);
-        session.setValue(parsed.text);
-        var anchors = make_anchors(parsed.anchors, doc);
-        $scope.anchor_list = anchors[0];
-        $scope.total_anchor = anchors[1];
-        if (update_total_fn) {
-            editor.on("change", update_total_fn);
+        $scope.advance = function () {
+            var total = $scope.total_anchor;
+            var target_line = session.getLine(total.row);
+            var total_grade = Util.extract_num(target_line, total.column);
+            var feedback_text = editor.getValue();
+            var anchors = deconstruct_anchors($scope.anchor_list, [total]);
+            $rootScope.$emit("students_skipped",
+                FeedbackStorage.advance(feedback_text, total_grade, anchors));
+            reset_editor();
+        };
+
+        $scope.jump_to_next = function () {
+            var anchor_list = $scope.anchor_list;
+            var loc = editor.getCursorPosition();
+            var row = loc.row;
+            var column = loc.column;
+            var selected = anchor_list[0];
+            var i;
+            for (i = 0; i < anchor_list.length; i++) {
+                if (anchor_list[i].row > row) {
+                    selected = anchor_list[i];
+                    break;
+                }
+            }
+            var target_line = editor.getSession().getLine(selected.row);
+            editor.selection.setSelectionRange(Util.extract_numrange(
+                target_line, selected.row, selected.column));
+        };
+
+        function reset_editor (first) {
+            var raw_template = 'Grade: $total/25\n\n- Q1: $entry/4\n- Q2: $entry/2\n- Q3: $entry/4\n- Q4: $entry/2\n- Q5: $entry/4\n- Q6: $entry/9\n\nGraded by Alan Wu';
+            var parsed = TemplateManager.parse(raw_template);
+            editor.off("change", update_total_fn);
+            session.setValue(parsed.text);
+            var anchors = make_anchors(parsed.anchors, doc);
+            $scope.anchor_list = anchors[0];
+            $scope.total_anchor = anchors[1];
+            if (update_total_fn) {
+                editor.on("change", update_total_fn);
+            }
+            return $scope.total_anchor;
         }
-        return $scope.total_anchor;
-    }
+    };
 
     function make_anchors (anchors, doc) {
         var entries = anchors.entry.map(function (e) {

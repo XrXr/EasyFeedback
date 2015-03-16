@@ -13,15 +13,15 @@
   <!-- <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script> -->
 </head>
 <body ng-app="easyFeedback">
-  <div class="nav-bar">
+  <div class="nav-bar" ng-controller="NavBar">
     <div class="logo vertical-center">Easy Feedback</div>
     <div class="button-box">
-      <div>Templates</div>
-      <div>Settings</div>
-      <div>Log in</div>
+      <div class="clickable" ng-click="template_picker()">Templates</div>
+      <div class="clickable">Settings</div>
+      <div class="clickable">Log in</div>
     </div>
   </div>
-  <editor class="editor block" on-tab="jump_to_next" on-ctrl-g="advance" ng-controller="MainEditor"></editor>
+  <editor class="editor block" on-tab="jump_to_next" on-ctrl-g="advance" ng-controller="MainEditor" callback="on_editor"></editor>
   <preview class="preview block"></preview>
   <editor class="notes block"></editor>
   <div class="status block">
@@ -39,6 +39,8 @@
   <script src="app/directives/selectBox.js"></script>
   <script src="app/controllers/MainEditor.js"></script>
   <script src="app/controllers/StatusPanel.js"></script>
+  <script src="app/controllers/NavBar.js"></script>
+  <script src="app/controllers/TemplatePicker.js"></script>
   <script src="app/factories/util.js"></script>
   <script src="app/factories/templateManager.js"></script>
   <script src="app/factories/feedbackStorage.js"></script>

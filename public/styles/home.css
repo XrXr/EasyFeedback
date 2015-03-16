@@ -56,9 +56,13 @@
     bottom: 0;
     left: 50%;
 }
-.ngdialog.ngdialog-theme-default.ngdialog-content.template-modal {
-    height: 100%;
-    width: 60%;
+.template-modal.ngdialog.ngdialog-theme-default {
+    padding-bottom: 80px;
+    padding-top: 80px;
+}
+.ngdialog.ngdialog-theme-default .ngdialog-content {
+    height: 350px;
+    width: 800px;
 }
 .divider {
     height: 100%;
@@ -86,7 +90,7 @@
 }
 .template-result-block > .top-container > .spinner {
     position: relative;
-    left: 20px;
+    left: 17px;
     transform: scale(0.16);
     top: -4px;
     margin: 0;
@@ -153,4 +157,10 @@
     display: inline-block;
     padding-left: 2px;
     padding-right: 2px;
+}
+.clickable {
+    cursor: pointer;
+}
+.button-box .clickable:hover {
+    color: #E1E1E1;
 }
