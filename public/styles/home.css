@@ -81,14 +81,14 @@
 .template-result-block {
     width: 22%;
 }
-.template-result-block > .top-container {
+.template-result-block .top-container {
     display: flex;
     align-content: space-between;
 }
-.template-result-block > .top-container > input {
+.template-result-block .top-container input {
     width: 75%;
 }
-.template-result-block > .top-container > .spinner {
+.template-result-block .top-container .spinner {
     position: relative;
     left: 17px;
     transform: scale(0.16);
@@ -163,4 +163,34 @@
 }
 .button-box .clickable:hover {
     color: #E1E1E1;
+}
+.template-container > .template-result-block > button
+{
+    position: absolute;
+    bottom: 0;
+}
+.template-result-container
+{
+    overflow: auto;
+    width: 100%;
+    height: 240px;
+}
+.add-template-buttons
+{
+    top: 190px;
+    justify-content: space-around;
+    display: flex;
+}
+.add-template-box
+{
+    position: relative;
+    top: 38%;
+}
+.add-template-buttons > button
+{
+    width: 75px;
+}
+.add-template-box > input
+{
+    margin-bottom: 8px
 }

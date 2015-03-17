@@ -1,8 +1,21 @@
 <div class="template-container">
   <div class="template-result-block">
-    <div class="top-container">
-      <input type="text" class="form-control" placeholder="Template name..." autofocus=true>
-      <div class="spinner"></div>
+    <div ng-if="!adding_template">
+      <div class="top-container">
+        <input type="text" class="form-control" placeholder="Template name..." autofocus=true>
+        <div class="spinner"></div>
+      </div>
+      <div class="template-result-container">
+
+      </div>
+      <button type="button" class="btn btn-primary" ng-click="new_template()">New template</button>
+    </div>
+    <div ng-if="adding_template" class="add-template-box">
+      <input type="text" class="form-control" placeholder="Template title...">
+      <div class="add-template-buttons">
+        <button type="button" class="btn btn-success">Add</button>
+        <button type="button" class="btn btn-danger" ng-click="cancel_adding()">Cancel</button>
+      </div>
     </div>
   </div>
   <div class=divider></div>
