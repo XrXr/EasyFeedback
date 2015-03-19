@@ -14,7 +14,7 @@ router.post("/upload_worksheet", function(req, res) {
         req.session.worksheet = val;
         req.session.last_index = 0;
         req.session.cookie.maxAge = 3600000 * 24;  // a day
-        res.type("text/plain").end();
+        end_request(res);
     });
     form.on('error', function(err){
         send_error(res, "Bad file");
@@ -70,6 +70,53 @@ router.get("/get_status", function (req, res) {
     }
 });
 
+// from StackOverflow 18082
+function isNumber(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+router.put("/change_current_template", function (req, res) {
+    // TODO: if (!req.session.templates)
+    if (isNumber(req.body.new_current)) {
+        req.session.templates.current = Number(req.body.new_current);
+        end_request(res);
+    } else {
+        send_error(req, "Bad request");
+    }
+});
+
+router.put("/new_template", function (req, res) {
+    // TODO: if (!req.session.templates)
+    var new_template = req.body.new_template;
+    if (!new_template || typeof(new_template) !== "object") {
+        return send_error(res, "Bad request");
+    }
+    if (!new_template.hasOwnProperty("title") ||
+        !new_template.hasOwnProperty("text")) {
+        return send_error(res, "Invalid note");
+    }
+    req.session.templates.list.push(req.body.new_template);
+    end_request(res);
+});
+
+router.get("/get_current_template", function (req, res) {
+    // TODO: these initialization should be moved after implementing login
+    if (!req.session.templates) {
+        req.session.templates = {
+            current: 0,
+            list: [{title: "A4A",
+                    text: 'Grade: $total/25\n\n- Q1: $entry/4\n- Q2: $entry/2\n- Q3: $entry/4\n- Q4: $entry/2\n- Q5: $entry/4\n- Q6: $entry/9\n\nGraded by Alan Wu'
+                  },{title: "AAS", text: "asdasd"},{title: "A3S", text: "as"}]
+        };
+    }
+    var templates = req.session.templates;
+    res.json({current_template: templates.list[templates.current].text});
+});
+
+router.get("/get_all_templates", function (req, res) {
+    res.json({templates: req.session.templates});
+});
+
 router.post("/new_feedback", function (req, res) {
     var student = req.body.student;
     var index = req.body.student_index;
@@ -88,7 +135,7 @@ router.post("/new_feedback", function (req, res) {
     req.session.student_list[index].anchors = student.anchors;
     req.session.orignal_csv[index][9] = student.feedback;
     req.session.orignal_csv[index][4] = student.grade;
-    res.type("text/plain").end();
+    end_request(res);
 });
 
 router.get("/render_worksheet", function (req, res) {
@@ -111,6 +158,12 @@ router.get("/render_worksheet", function (req, res) {
 */
 function send_error (res, message) {
     res.json({error: message});
+}
+/**
+  End a request and send nothing
+*/
+function end_request (res) {
+    res.type("text/plain").end();
 }
 
 module.exports = router;

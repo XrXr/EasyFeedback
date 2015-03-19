@@ -1,8 +1,6 @@
 angular.module("easyFeedback")
-.factory("TemplateManager", function () {
-    return {
-        parse : parse
-    };
+.factory("TemplateManager", function ($http, $q) {
+    var parsed_current = null;  // using null to indicate not yet fetched
     /**
      * Parse a raw template into normal Markdown
      * @param {string} raw_template - The template to parse. Different lines
@@ -39,4 +37,51 @@ angular.module("easyFeedback")
             }
         };
     }
+    /**
+     * Return the current template in parsed form. Call to this function will
+     * throw if the manager has not fetch the current template
+     * @return {Object} An object that would be a return value of parse
+     */
+    function get_parsed_current () {
+        if (!parsed_current) {
+            throw Error("Current template not fetched/parsed");
+        }
+        return parsed_current;
+    }
+    /**
+     * Fetch the current template
+     * @return {Promise} A promise that resolves when the fetching has finished
+     */
+    function fetch_current () {
+        return $http.get("/get_current_template").then(function (response) {
+            parsed_current = parse(response.data.current_template);
+            return parsed_current;
+        });
+    }
+    /**
+     * Fetch all the templates
+     * @return {Promise} A promise that resolves with wtih an object that has
+     * the structure:
+     *   {
+     *     current: number,
+     *     list: [string]
+     *   }
+     */
+    function fetch_all () {
+        return $http.get("/get_all_templates").then(function (response) {
+            return response.data.templates;
+        });
+    }
+
+    function update_current (raw_template) {
+        parsed_current = parse(raw_template);
+    }
+
+    return {
+        parse: parse,
+        get_parsed_current: get_parsed_current,
+        fetch_current: fetch_current,
+        fetch_all: fetch_all,
+        update_current: update_current
+    };
 });

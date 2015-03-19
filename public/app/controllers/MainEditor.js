@@ -20,6 +20,7 @@ angular.module("easyFeedback")
         $scope.total_anchor = real_anchors[1];
         editor.on("change", update_total_fn);
     });
+
     $scope.on_editor = function (editor) {
         var session = editor.getSession();
         var doc = session.getDocument();
@@ -27,9 +28,8 @@ angular.module("easyFeedback")
             $rootScope.$emit("mainEditorChange", editor.getValue());
         }
         editor.on("change", emit_change);
-        reset_editor();
-        // the first reset doesn't fire the event with the value properly
-        $timeout(emit_change, 0);
+        $rootScope.$on("reset_editor", reset_editor);
+
         var deduction = /^(?!\s*-\s*).*(?:\(-(\d+)\))$/;
         // TODO: this is ugly as heck, pull it out
         update_total_fn = function update_total () {
@@ -65,7 +65,17 @@ angular.module("easyFeedback")
                 editor.on("change", update_total);
             }, 0);
         };
-        editor.on("change", update_total_fn);
+
+        // initialize the editor after fetching the current template
+        // TODO: some notice about loading the template
+        TemplateManager.fetch_current().then(initialize_editor);
+
+        function initialize_editor () {
+            editor.on("change", update_total_fn);
+            reset_editor();
+            // the first reset doesn't fire the event with the value properly
+            $timeout(emit_change, 0);
+        }
 
         $scope.advance = function () {
             var total = $scope.total_anchor;
@@ -96,9 +106,8 @@ angular.module("easyFeedback")
                 target_line, selected.row, selected.column));
         };
 
-        function reset_editor (first) {
-            var raw_template = 'Grade: $total/25\n\n- Q1: $entry/4\n- Q2: $entry/2\n- Q3: $entry/4\n- Q4: $entry/2\n- Q5: $entry/4\n- Q6: $entry/9\n\nGraded by Alan Wu';
-            var parsed = TemplateManager.parse(raw_template);
+        function reset_editor () {
+            var parsed = TemplateManager.get_parsed_current();
             editor.off("change", update_total_fn);
             session.setValue(parsed.text);
             var anchors = make_anchors(parsed.anchors, doc);
@@ -115,7 +124,10 @@ angular.module("easyFeedback")
         var entries = anchors.entry.map(function (e) {
             return doc.createAnchor(e[0], e[1]);
         });
-        var total = doc.createAnchor.apply(doc, anchors.total[0]);
+        var total;
+        if (anchors.total[0]) {
+            doc.createAnchor.apply(doc, anchors.total[0]);
+        }
         return [entries, total];
     }
 

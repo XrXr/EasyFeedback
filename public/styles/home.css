@@ -99,6 +99,7 @@
     width: 80%;
 }
 .template-preview-block {
+    padding-top: 5px;
     width: 30%;
     height: 100%;
 }
@@ -192,5 +193,18 @@
 }
 .add-template-box > input
 {
-    margin-bottom: 8px
+    margin-bottom: 8px;
+}
+.add-template-box > .spinner
+{
+    position: absolute;
+    transform: scale(0.4);
+    left: 65px;
+    bottom: 140px;
+    margin: 0;
+}
+.title-alert
+{
+    text-align: center;
+    color: darkred;
 }

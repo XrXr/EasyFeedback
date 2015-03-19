@@ -3,23 +3,34 @@
     <div ng-if="!adding_template">
       <div class="top-container">
         <input type="text" class="form-control" placeholder="Template name..." autofocus=true>
-        <div class="spinner"></div>
+        <div ng-if="loading" class="spinner"></div>
       </div>
       <div class="template-result-container">
-
+        <table class="table table-hover">
+          <tbody>
+            <tr class="clickable" ng-repeat="t in templates track by $index" ng-click="template_selected($index)" ng-class="is_current($index) ? 'success' : ''">
+              <td><b>{{t.title}}</b></td>
+            </tr>
+        </table>
       </div>
       <button type="button" class="btn btn-primary" ng-click="new_template()">New template</button>
     </div>
     <div ng-if="adding_template" class="add-template-box">
-      <input type="text" class="form-control" placeholder="Template title...">
+      <div ng-if="loading" class="spinner"></div>
+      <div class="form-group" ng-class="input_class()">
+        <input ng-model="ns.new_template_title" type="text" class="form-control" placeholder="Template title...">
+      </div>
       <div class="add-template-buttons">
-        <button type="button" class="btn btn-success">Add</button>
+        <button type="button" class="btn btn-success" ng-click="create_new_template()" ng-disabled="loading">Add</button>
         <button type="button" class="btn btn-danger" ng-click="cancel_adding()">Cancel</button>
+      </div>
+      <div ng-if="template_title_invalid" class="title-alert">
+        A title is required
       </div>
     </div>
   </div>
   <div class=divider></div>
   <editor class="template-preview-block" callback="on_editor"></editor>
   <div class=divider></div>
-  <div class="template-preview-block well"></div>
+  <preview class="template-preview-block well"></preview>
 </div>
