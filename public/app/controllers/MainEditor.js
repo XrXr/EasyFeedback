@@ -3,23 +3,6 @@ angular.module("easyFeedback")
                                     TemplateManager, FeedbackStorage) {
     $scope.anchor_list = [];
     var update_total_fn;
-    $rootScope.$on("view_feedback", function (_, student) {
-        console.log(student)
-        var anchors = student.anchors;
-        var feedback = student.feedback;
-        if (!FeedbackStorage.is_graded(student) || !anchors) {
-            return reset_editor();
-        }
-        var editor = $scope.editor;
-        var session = editor.getSession();
-        var doc = session.getDocument();
-        editor.off("change", update_total_fn);
-        session.setValue(feedback);
-        var real_anchors = make_anchors(anchors, doc);
-        $scope.anchor_list = real_anchors[0];
-        $scope.total_anchor = real_anchors[1];
-        editor.on("change", update_total_fn);
-    });
 
     $scope.on_editor = function (editor) {
         var session = editor.getSession();
@@ -118,6 +101,21 @@ angular.module("easyFeedback")
             }
             return $scope.total_anchor;
         }
+
+        $rootScope.$on("view_feedback", function (_, student) {
+            console.log(student)
+            var anchors = student.anchors;
+            var feedback = student.feedback;
+            if (!FeedbackStorage.is_graded(student) || !anchors) {
+                return reset_editor();
+            }
+            editor.off("change", update_total_fn);
+            session.setValue(feedback);
+            var real_anchors = make_anchors(anchors, doc);
+            $scope.anchor_list = real_anchors[0];
+            $scope.total_anchor = real_anchors[1];
+            editor.on("change", update_total_fn);
+        });
     };
 
     function make_anchors (anchors, doc) {
@@ -126,7 +124,7 @@ angular.module("easyFeedback")
         });
         var total;
         if (anchors.total[0]) {
-            doc.createAnchor.apply(doc, anchors.total[0]);
+            total = doc.createAnchor.apply(doc, anchors.total[0]);
         }
         return [entries, total];
     }
