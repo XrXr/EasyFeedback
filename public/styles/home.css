@@ -60,7 +60,7 @@
     padding-bottom: 80px;
     padding-top: 80px;
 }
-.ngdialog.ngdialog-theme-default .ngdialog-content {
+.template-modal.ngdialog.ngdialog-theme-default .ngdialog-content {
     height: 350px;
     width: 800px;
 }
