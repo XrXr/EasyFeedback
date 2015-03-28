@@ -22,7 +22,7 @@ angular.module("easyFeedback")
                     total += Util.extract_num(session.getLine(anchor.row),
                                               anchor.column);
                 });
-                var target_line = session.getLine(total_anchor.row);
+                var total_line = session.getLine(total_anchor.row);
                 var total_lines = session.getLength();
                 for (var i = 0; i < total_lines; i++) {
                     var line = session.getLine(i);
@@ -34,14 +34,17 @@ angular.module("easyFeedback")
                 }
                 // negative grade doesn't make sense
                 total = Math.max(0, total);
-                if (Util.extract_num(target_line,
-                                     total_anchor.column) === total) {
+                var current_total_string = Util.
+                    extract_num_string(total_line, total_anchor.column);
+                if (total == Number(current_total_string) &&
+                    current_total_string !== "") {
                     return;
                 }
+
                 editor.off("change", update_total);
-                session.replace(Util.extract_numrange(target_line,
+                session.replace(Util.extract_numrange(total_line,
                     total_anchor.row, total_anchor.column), String(total));
-                $timeout(function () {
+                $timeout(function () {  // a hack to correct Ace undo
                     session.getUndoManager().$undoStack.pop();
                 }, 0);
                 editor.on("change", update_total);
