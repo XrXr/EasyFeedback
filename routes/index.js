@@ -47,7 +47,7 @@ router.get("/get_status", function (req, res) {
         }
         csv.shift();   // the first line does not contain any info
         req.session.orignal_csv = csv;
-        var no_submission = /No submission/g;
+        var submitted = /Submitted for grading/g;
         var student_list = csv.map(function (row, index) {
             var student = {
                 name: row[1],
@@ -57,7 +57,7 @@ router.get("/get_status", function (req, res) {
                 feedback: row[9],
                 grade: row[4]
             };
-            if (row[3].search(no_submission) !== -1) {
+            if (row[3].search(submitted) === -1) {
                 student.not_submitted = true;
                 student.grade = 0;
                 req.session.orignal_csv[index][4] = 0;
