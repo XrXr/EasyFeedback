@@ -2,7 +2,6 @@ angular.module("easyFeedback")
 .controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
                                     TemplateManager, FeedbackStorage) {
     $scope.anchor_list = [];
-    var update_total_fn;
 
     $scope.on_editor = function (editor) {
         var session = editor.getSession();
@@ -13,9 +12,9 @@ angular.module("easyFeedback")
         editor.on("change", emit_change);
         $rootScope.$on("reset_editor", reset_editor);
 
+        // match a line that doesn't start with '-' and end with '(-num)'
         var deduction = /^(?!\s*-\s*).*(?:\(-(\d+)\))$/;
-        // TODO: this is ugly as heck, pull it out
-        update_total_fn = function update_total () {
+        function update_total () {
             $timeout(function () {
                 var total = 0;
                 var total_anchor = $scope.total_anchor;
@@ -47,14 +46,14 @@ angular.module("easyFeedback")
                 }, 0);
                 editor.on("change", update_total);
             }, 0);
-        };
+        }
 
         // initialize the editor after fetching the current template
         // TODO: some notice about loading the template
         TemplateManager.fetch_current().then(initialize_editor);
 
         function initialize_editor () {
-            editor.on("change", update_total_fn);
+            editor.on("change", update_total);
             reset_editor();
             // the first reset doesn't fire the event with the value properly
             $timeout(emit_change, 0);
@@ -91,14 +90,12 @@ angular.module("easyFeedback")
 
         function reset_editor () {
             var parsed = TemplateManager.get_parsed_current();
-            editor.off("change", update_total_fn);
+            editor.off("change", update_total);
             session.setValue(parsed.text);
             var anchors = make_anchors(parsed.anchors, doc);
             $scope.anchor_list = anchors[0];
             $scope.total_anchor = anchors[1];
-            if (update_total_fn) {
-                editor.on("change", update_total_fn);
-            }
+            editor.on("change", update_total);
             return $scope.total_anchor;
         }
 
@@ -109,12 +106,12 @@ angular.module("easyFeedback")
             if (!FeedbackStorage.is_graded(student) || !anchors) {
                 return reset_editor();
             }
-            editor.off("change", update_total_fn);
+            editor.off("change", update_total);
             session.setValue(feedback);
             var real_anchors = make_anchors(anchors, doc);
             $scope.anchor_list = real_anchors[0];
             $scope.total_anchor = real_anchors[1];
-            editor.on("change", update_total_fn);
+            editor.on("change", update_total);
         });
     };
 
