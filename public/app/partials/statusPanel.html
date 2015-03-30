@@ -1,4 +1,4 @@
-<button type="button" ng-click="upload_modal()" class="btn btn-primary margin-right">Upload Worksheet</button><button type="button" ng-disabled="error_message" ng-click="render_worksheet()" class="btn btn-success">Download Results</button>
+<button type="button" ng-click="upload_modal()" class="btn btn-primary margin-right">Upload Worksheet</button><button type="button" ng-disabled="error_message" ng-click="render_worksheet()" class="btn btn-success margin-right">Download Results</button><div type="button" ng-disabled="error_message" ng-click="commit_feedback()" class="btn btn-success margin-right">Commit Feedback</div><div type="button" ng-click="reset_editor()" class="btn btn-warning">Reset</div>
 <div ng-if="error_message === 'No worksheet uploaded'">No active marking session, please upload a worksheet</div>
 <div ng-if="!error_message">
   <div>Currently grading: <span ng-bind="storage.get_current().name"></span></div>

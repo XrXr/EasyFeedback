@@ -3,12 +3,14 @@ angular.module("easyFeedback")
                                      FeedbackStorage, $rootScope) {
     $scope.storage = FeedbackStorage;
     $scope.skipped_students = [];
+
     $scope.upload_modal = function () {
         ngDialog.open({
             template: "app/partials/worksheetUpload.html",
             controller: "WorksheetUpload"
         }).closePromise.then(update_data);
     };
+
     $scope.render_worksheet = function () {
         var link = document.createElement('a');
         link.href = '/render_worksheet';
@@ -16,12 +18,14 @@ angular.module("easyFeedback")
         e.initEvent('click', true, true);
         link.dispatchEvent(e);
     };
+
     // TODO: add warning about imported csv don't have tab jumps
     $scope.view_feedback = function (student_index) {
         var student = FeedbackStorage.students[student_index];
         FeedbackStorage.current_index = student_index;
         $rootScope.$emit("view_feedback", student);
     };
+
     $scope.student_status = function (student) {
         if (student.not_submitted) {
             return "Not Submitted";
@@ -31,9 +35,21 @@ angular.module("easyFeedback")
         }
         return "Needs Grading";
     };
+
+    $scope.commit_feedback = function () {
+        $rootScope.$emit("commit_feedback");
+    };
+
+    $scope.reset_editor = function () {
+        $rootScope.$emit("reset_editor");
+        $rootScope.$emit("focus_editor");
+    };
+
+
     $rootScope.$on("students_skipped", function (_, students) {
         $scope.skipped_students = students;
     });
+
     update_data();
     function update_data () {
         //  TODO: add loading spinner
@@ -42,6 +58,7 @@ angular.module("easyFeedback")
             $scope.error_message = "";
             if (data.error) {
                 $scope.error_message = data.error;
+
                 return;
             }
             $scope.skipped_students = FeedbackStorage.update_data(

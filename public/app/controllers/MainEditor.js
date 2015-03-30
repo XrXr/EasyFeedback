@@ -62,16 +62,31 @@ angular.module("easyFeedback")
             $timeout(emit_change, 0);
         }
 
-        $scope.advance = function () {
+        function extract_info () {
             var total = $scope.total_anchor;
             var target_line = session.getLine(total.row);
             var total_grade = Util.extract_num(target_line, total.column);
             var feedback_text = editor.getValue();
             var anchors = deconstruct_anchors($scope.anchor_list, [total]);
-            $rootScope.$emit("students_skipped",
-                FeedbackStorage.advance(feedback_text, total_grade, anchors));
+            return {
+                text: feedback_text,
+                total_grade: total_grade,
+                anchors: anchors
+            };
+        }
+
+        $scope.advance = function () {
+            var info = extract_info();
+            FeedbackStorage.advance(info.text, info.total_grade, info.anchors);
             reset_editor();
         };
+
+        $rootScope.$on("commit_feedback", function () {
+            var info = extract_info();
+            FeedbackStorage.commit_feedback(info.text, info.total_grade,
+                                            info.anchors);
+        });
+
 
         $scope.jump_to_next = function () {
             var anchor_list = $scope.anchor_list;
@@ -115,6 +130,11 @@ angular.module("easyFeedback")
             $scope.anchor_list = real_anchors[0];
             $scope.total_anchor = real_anchors[1];
             editor.on("change", update_total);
+        });
+
+        $rootScope.$on("focus_editor", function () {
+            editor.focus();
+            $scope.jump_to_next();
         });
     };
 

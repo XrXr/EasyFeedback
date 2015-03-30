@@ -33,23 +33,16 @@ angular.module("easyFeedback")
           @return {array} array of students skipped due to no submission
         */
         advance: function (feedback, grade, anchors) {
-            var to_send = students[current_index];
-            if (!is_graded(to_send)) {
-                // only increment when it was not graded before
-                total_graded++;
-            }
             var student_index = current_index;
-            to_send.feedback = feedback;
-            to_send.grade = grade;
-            to_send.anchors = anchors;
-            maybe_advance_index();
+            maybe_advance_index();  // TODO: case of last student not submitted
             var skipped = skip_until_valid();
-            $http.post("/new_feedback", {
-                student: to_send,
-                student_index: student_index,
-                new_index: current_index,
-            });  // TODO: add mechanism for request status
+            commit_feedback(student_index, current_index, feedback, grade,
+                            anchors);
             return skipped;
+        },
+        commit_feedback: function () {
+            commit_feedback.bind(null, current_index, current_index).
+                            apply(null, arguments);
         },
         get_current: function () {
             return students[current_index];
@@ -74,17 +67,36 @@ angular.module("easyFeedback")
         },
         is_graded: is_graded
     };
+
+    function commit_feedback (oldi, newi, feedback, grade, anchors) {
+        var to_send = students[oldi];
+        if (!is_graded(to_send)) {
+            // only increment when it was not graded before
+            total_graded++;
+        }
+        to_send.feedback = feedback;
+        to_send.grade = grade;
+        to_send.anchors = anchors;
+        $http.post("/new_feedback", {
+            student: to_send,
+            student_index: oldi,
+            new_index: newi,
+        });  // TODO: add mechanism for request status
+    }
+
     function maybe_advance_index () {
         if (current_index + 1 < students.length) {
             current_index++;
         }
     }
+
     function Skipped (student, reason) {
         return {
             student: student,
             reason: reason
         };
     }
+
     function skip_until_valid () {
         var skipped = [];
         while (current_index !== students.length - 1) {
