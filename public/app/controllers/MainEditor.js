@@ -12,18 +12,25 @@ angular.module("easyFeedback")
         editor.on("change", emit_change);
         $rootScope.$on("reset_editor", reset_editor);
 
+        // execute a function without triggering the update_total handler
+        function no_update (fn) {
+            editor.off("change", update_total);
+            fn();
+            editor.on("change", update_total);
+        }
+
         // match a line that doesn't start with '-' and end with '(-num)'
         var deduction = /^(?!\s*-\s*).*(?:\(-(\d+)\))$/;
-        function update_total (d) {
+        function update_total (delta) {
             $timeout(function () {
-                var row_changed = d.data.range.start.row;
-                var line = session.getLine(row_changed);
+                var row_changed = delta.data.range.start.row;
+                var changed_line = session.getLine(row_changed);
                 $scope.anchor_list.forEach(function (anchor) {
                     if (anchor.ace_anchor.row === row_changed &&
-                        !anchor.guard.test(line)) {
-                        editor.off("change", update_total);
-                        session.getUndoManager().undo(true);
-                        editor.on("change", update_total);
+                        !anchor.guard.test(changed_line)) {
+                        no_update(function () {
+                            session.getUndoManager().undo(true);
+                        });
                         return;
                     }
                 });
@@ -53,13 +60,13 @@ angular.module("easyFeedback")
                     return;
                 }
 
-                editor.off("change", update_total);
-                session.replace(Util.extract_numrange(total_line,
-                    total_anchor.row, total_anchor.column), String(total));
-                $timeout(function () {  // a hack to correct Ace undo
-                    session.getUndoManager().$undoStack.pop();
-                }, 0);
-                editor.on("change", update_total);
+                no_update(function () {
+                    session.replace(Util.extract_numrange(total_line,
+                        total_anchor.row, total_anchor.column), String(total));
+                    $timeout(function () {  // a hack to correct Ace undo
+                        session.getUndoManager().$undoStack.pop();
+                    }, 0);
+                });
             }, 0);
         }
 
@@ -79,7 +86,8 @@ angular.module("easyFeedback")
             var target_line = session.getLine(total.row);
             var total_grade = Util.extract_num(target_line, total.column);
             var feedback_text = editor.getValue();
-            var anchors = deconstruct_anchors($scope.anchor_list, [total]);
+            var anchors = deconstruct_anchors($scope.anchor_list,
+                                              [$scope.total_anchor]);
             return {
                 text: feedback_text,
                 total_grade: total_grade,
@@ -98,7 +106,6 @@ angular.module("easyFeedback")
             FeedbackStorage.commit_feedback(info.text, info.total_grade,
                                             info.anchors);
         });
-
 
         $scope.jump_to_next = function () {
             var anchor_list = $scope.anchor_list;
@@ -120,12 +127,12 @@ angular.module("easyFeedback")
 
         function reset_editor () {
             var parsed = TemplateManager.get_parsed_current();
-            editor.off("change", update_total);
-            session.setValue(parsed.text);
-            var anchors = make_anchors(parsed.anchors, doc);
-            $scope.anchor_list = anchors[0];
-            $scope.total_anchor = anchors[1];
-            editor.on("change", update_total);
+            no_update(function () {
+                session.setValue(parsed.text);
+                var anchors = make_anchors(parsed.anchors, doc);
+                $scope.anchor_list = anchors[0];
+                $scope.total_anchor = anchors[1];
+            });
             return $scope.total_anchor;
         }
 
@@ -136,12 +143,12 @@ angular.module("easyFeedback")
             if (!FeedbackStorage.is_graded(student) || !anchors) {
                 return reset_editor();
             }
-            editor.off("change", update_total);
-            session.setValue(feedback);
-            var real_anchors = make_anchors(anchors, doc);
-            $scope.anchor_list = real_anchors[0];
-            $scope.total_anchor = real_anchors[1];
-            editor.on("change", update_total);
+            no_update(function () {
+                session.setValue(feedback);
+                var real_anchors = make_anchors(anchors, doc);
+                $scope.anchor_list = real_anchors[0];
+                $scope.total_anchor = real_anchors[1];
+            });
         });
 
         $rootScope.$on("focus_editor", function () {
@@ -175,8 +182,9 @@ angular.module("easyFeedback")
         };
 
         function deconstruct (a) {
-            a = a.ace_anchor;
-            return [a.row, a.column];
+            var info = [a.ace_anchor.row, a.ace_anchor.column];
+            info.guard = a.guard;
+            return info;
         }
     }
 });
