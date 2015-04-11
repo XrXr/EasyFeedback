@@ -9,25 +9,38 @@ angular.module("easyFeedback")
      * contains the parsed text and positions for making the anchors. anchors
      * contain two properties total and entry.
      */
+    // TODO: one total only, one line per entry, total and entry can't be on
+    // the same line
+    // this regex is for detecting a number or a number being inputted
+    var num_input_pattern = /(\d+|\.\d+|\d+\.?\d+|\d+\.)?/.source;
     function parse (raw_template) {
         var str_array = raw_template.split("\n");
-        var i;
         var total_anchors = [];
         var entry_anchors = [];
-        for (i = 0; i < str_array.length; i++) {
+        for (var i = 0; i < str_array.length; i++) {
             // re objects are created here since exec replies on their state
             var total_re = /\$total/g;
             var entry_re = /\$entry/g;
             var line = str_array[i];
-            var match;
-            while ((match = total_re.exec(line)) !== null) {
+            var match = total_re.exec(line);
+            if (match) {
                 total_anchors.push([i, match.index]);
+                str_array[i] = str_array[i].replace(total_re, "");
             }
-            while ((match = entry_re.exec(line)) !== null) {
-                entry_anchors.push([i, match.index]);
+            match = entry_re.exec(line);
+            if (match) {
+                var guard = "";
+                var anchor_info = [i, match.index];
+                str_array[i] = str_array[i].replace(entry_re, "");
+                guard = ["^",
+                         XRegExp.escape(str_array[i].substr(0, match.index)),
+                         num_input_pattern,
+                         XRegExp.escape(str_array[i].substr(match.index)),
+                         "$"].join("");
+                // trading space for speed here. Each line can't be that long
+                anchor_info.guard = new RegExp(guard);
+                entry_anchors.push(anchor_info);
             }
-            str_array[i] = str_array[i].replace(total_re, "");
-            str_array[i] = str_array[i].replace(entry_re, "");
         }
         return {
             text: str_array.join("\n"),

@@ -34,10 +34,10 @@ angular.module("easyFeedback")
      * character in the number string sequence
      * @return {string} The numeric string
      */
-    var num_search = /(\d+|\.\d+|\d+\.?\d+)$/;
+    var num_regex = /(\d+|\.\d+|\d+\.?\d+)$/;
     function extract_num_string (str, column) {
         str = str.slice(0, column);
-        var result = num_search.exec(str);
+        var result = num_regex.exec(str);
         if (result) {
             return result[1];  // first match group
         }
@@ -47,6 +47,6 @@ angular.module("easyFeedback")
     return {
         extract_numrange : extract_numrange,
         extract_num: extract_num,
-        extract_num_string: extract_num_string
+        extract_num_string: extract_num_string,
     };
 });

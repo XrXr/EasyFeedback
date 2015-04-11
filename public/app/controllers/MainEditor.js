@@ -14,11 +14,23 @@ angular.module("easyFeedback")
 
         // match a line that doesn't start with '-' and end with '(-num)'
         var deduction = /^(?!\s*-\s*).*(?:\(-(\d+)\))$/;
-        function update_total () {
+        function update_total (d) {
             $timeout(function () {
-                var total = 0;
-                var total_anchor = $scope.total_anchor;
+                var row_changed = d.data.range.start.row;
+                var line = session.getLine(row_changed);
                 $scope.anchor_list.forEach(function (anchor) {
+                    if (anchor.ace_anchor.row === row_changed &&
+                        !anchor.guard.test(line)) {
+                        editor.off("change", update_total);
+                        session.getUndoManager().undo(true);
+                        editor.on("change", update_total);
+                        return;
+                    }
+                });
+                var total = 0;
+                var total_anchor = $scope.total_anchor.ace_anchor;
+                $scope.anchor_list.forEach(function (anchor) {
+                    anchor = anchor.ace_anchor;
                     total += Util.extract_num(session.getLine(anchor.row),
                                               anchor.column);
                 });
@@ -63,7 +75,7 @@ angular.module("easyFeedback")
         }
 
         function extract_info () {
-            var total = $scope.total_anchor;
+            var total = $scope.total_anchor.ace_anchor;
             var target_line = session.getLine(total.row);
             var total_grade = Util.extract_num(target_line, total.column);
             var feedback_text = editor.getValue();
@@ -94,13 +106,13 @@ angular.module("easyFeedback")
             var row = loc.row;
             var column = loc.column;
             var selected = anchor_list[0];
-            var i;
-            for (i = 0; i < anchor_list.length; i++) {
-                if (anchor_list[i].row > row) {
+            for (var i = 0; i < anchor_list.length; i++) {
+                if (anchor_list[i].ace_anchor.row > row) {
                     selected = anchor_list[i];
                     break;
                 }
             }
+            selected = selected.ace_anchor;
             var target_line = editor.getSession().getLine(selected.row);
             editor.selection.setSelectionRange(Util.extract_numrange(
                 target_line, selected.row, selected.column));
@@ -140,11 +152,16 @@ angular.module("easyFeedback")
 
     function make_anchors (anchors, doc) {
         var entries = anchors.entry.map(function (e) {
-            return doc.createAnchor(e[0], e[1]);
+            return {
+                ace_anchor: doc.createAnchor(e[0], e[1]),
+                guard: e.guard
+            };
         });
         var total;
         if (anchors.total[0]) {
-            total = doc.createAnchor.apply(doc, anchors.total[0]);
+            total = {
+                ace_anchor: doc.createAnchor.apply(doc, anchors.total[0])
+            };
         }
         return [entries, total];
     }
@@ -158,6 +175,7 @@ angular.module("easyFeedback")
         };
 
         function deconstruct (a) {
+            a = a.ace_anchor;
             return [a.row, a.column];
         }
     }
