@@ -1,6 +1,6 @@
-angular.module("easyFeedback")
-.controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
-                                    TemplateManager, FeedbackStorage) {
+angular.module("easyFeedback").
+controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
+                                   TemplateManager, FeedbackStorage) {
     $scope.anchor_list = [];
 
     $scope.on_editor = function (editor) {
@@ -8,17 +8,30 @@ angular.module("easyFeedback")
         var doc = session.getDocument();
         var Range = ace.require("ace/range").Range;
 
-        function emit_change () {
-            $rootScope.$emit("mainEditorChange", editor.getValue());
-        }
         editor.on("change", emit_change);
         $rootScope.$on("reset_editor", reset_editor);
+        $rootScope.$on("replace_current_line", replace_current_line);
+        $rootScope.$on("view_feedback", view_feedback);
+        $rootScope.$on("focus_editor", focus_editor);
+        $rootScope.$on("commit_feedback", commit_feedback);
+        // initialize the editor after fetching the current template
+        // TODO: some notice about loading the template
+        TemplateManager.fetch_current().then(initialize_editor);
+        // make the hotkey mapping object
+        $scope.hotkeys = {
+            "Tab": jump_to_next_anchor,
+            "ctrl+g": save_and_grade_next
+        };
+        for (var i = 1; i < 10; i++) {
+            var key = "ctrl+" + i;
+            $scope.hotkeys[key] = get_common_feedback.bind(null, i - 1);
+        }
 
-        // execute a function without triggering the update_total handler
-        function no_update (fn) {
-            editor.off("change", update_total);
-            fn();
+        function initialize_editor () {
             editor.on("change", update_total);
+            reset_editor();
+            // the first reset doesn't fire the event with the value properly
+            $timeout(emit_change, 0);
         }
 
         // match a line that doesn't start with '-' and end with '(-num)'
@@ -73,15 +86,15 @@ angular.module("easyFeedback")
             }, 0);
         }
 
-        // initialize the editor after fetching the current template
-        // TODO: some notice about loading the template
-        TemplateManager.fetch_current().then(initialize_editor);
-
-        function initialize_editor () {
+        // execute a function without triggering the update_total handler
+        function no_update (fn) {
+            editor.off("change", update_total);
+            fn();
             editor.on("change", update_total);
-            reset_editor();
-            // the first reset doesn't fire the event with the value properly
-            $timeout(emit_change, 0);
+        }
+
+        function emit_change () {
+            $rootScope.$emit("mainEditorChange", editor.getValue());
         }
 
         function extract_info () {
@@ -103,12 +116,6 @@ angular.module("easyFeedback")
             FeedbackStorage.advance(info.text, info.total_grade, info.anchors);
             reset_editor();
         }
-
-        $rootScope.$on("commit_feedback", function () {
-            var info = extract_info();
-            FeedbackStorage.commit_feedback(info.text, info.total_grade,
-                                            info.anchors);
-        });
 
         function jump_to_next_anchor () {
             var anchor_list = $scope.anchor_list;
@@ -148,7 +155,7 @@ angular.module("easyFeedback")
             $rootScope.$broadcast("get_common_feedback", lineno);
         }
 
-        $rootScope.$on("replace_current_line", function (_, new_line) {
+        function replace_current_line (_, new_line) {
             var row = editor.getCursorPosition().row;
             var illegal = $scope.anchor_list.some(function (a) {
                 return a.ace_anchor.row === row;
@@ -161,9 +168,9 @@ angular.module("easyFeedback")
             var len = new_line.length;
             // put cursor at the end of the new line
             editor.selection.setSelectionRange(new Range(row, len, row, len));
-        });
+        }
 
-        $rootScope.$on("view_feedback", function (_, student) {
+        function view_feedback (_, student) {
             console.log(student)
             var anchors = student.anchors;
             var feedback = student.feedback;
@@ -176,21 +183,17 @@ angular.module("easyFeedback")
                 $scope.anchor_list = real_anchors[0];
                 $scope.total_anchor = real_anchors[1];
             });
-        });
+        }
 
-        $rootScope.$on("focus_editor", function () {
+        function focus_editor () {
             editor.focus();
             jump_to_next_anchor();
-        });
+        }
 
-        $scope.hotkeys = {
-            "Tab": jump_to_next_anchor,
-            "ctrl+g": save_and_grade_next
-        };
-
-        for (var i = 1; i < 10; i++) {
-            $scope.hotkeys["ctrl+" + i] =
-                get_common_feedback.bind(null, i - 1);
+        function commit_feedback () {
+            var info = extract_info();
+            FeedbackStorage.commit_feedback(info.text, info.total_grade,
+                                            info.anchors);
         }
     };
 
