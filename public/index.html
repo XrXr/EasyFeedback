@@ -22,9 +22,9 @@
       <div class="clickable">Log in</div>
     </div>
   </div>
-  <editor class="editor block" on-tab="jump_to_next" on-ctrl-g="advance" ng-controller="MainEditor" callback="on_editor"></editor>
+  <editor class="editor block" keydown="hotkeys" ng-controller="MainEditor" callback="on_editor"></editor>
   <preview class="preview block"></preview>
-  <editor class="notes block"></editor>
+  <editor class="notes block" ng-controller="NoteEditor" callback="on_editor"></editor>
   <div class="status block">
     <ng-include src="'app/partials/statusPanel.html'" ng-controller="StatusPanel"></ng-include>
   </div>
@@ -34,11 +34,11 @@
   <script src="app/libs/ngDialog.js"></script>
   <script src="app/libs/angular-file-upload.js"></script>
   <script src="app/directives/editor.js"></script>
-  <script src="app/directives/onTab.js"></script>
-  <script src="app/directives/onCtrlG.js"></script>
+  <script src="app/directives/keydown.js"></script>
   <script src="app/directives/preview.js"></script>
   <script src="app/directives/selectBox.js"></script>
   <script src="app/controllers/MainEditor.js"></script>
+  <script src="app/controllers/NoteEditor.js"></script>
   <script src="app/controllers/StatusPanel.js"></script>
   <script src="app/controllers/NavBar.js"></script>
   <script src="app/controllers/TemplatePicker.js"></script>

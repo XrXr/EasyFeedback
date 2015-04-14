@@ -6,6 +6,8 @@ angular.module("easyFeedback")
     $scope.on_editor = function (editor) {
         var session = editor.getSession();
         var doc = session.getDocument();
+        var Range = ace.require("ace/range").Range;
+
         function emit_change () {
             $rootScope.$emit("mainEditorChange", editor.getValue());
         }
@@ -21,6 +23,7 @@ angular.module("easyFeedback")
 
         // match a line that doesn't start with '-' and end with '(-num)'
         var deduction = /^(?!\s*-\s*).*(?:\(-(\d+)\))$/;
+        // TODO: protect from selecting entire anchor line(s) and deleting
         function update_total (delta) {
             $timeout(function () {
                 var row_changed = delta.data.range.start.row;
@@ -95,11 +98,11 @@ angular.module("easyFeedback")
             };
         }
 
-        $scope.advance = function () {
+        function save_and_grade_next () {
             var info = extract_info();
             FeedbackStorage.advance(info.text, info.total_grade, info.anchors);
             reset_editor();
-        };
+        }
 
         $rootScope.$on("commit_feedback", function () {
             var info = extract_info();
@@ -107,7 +110,7 @@ angular.module("easyFeedback")
                                             info.anchors);
         });
 
-        $scope.jump_to_next = function () {
+        function jump_to_next_anchor () {
             var anchor_list = $scope.anchor_list;
             var loc = editor.getCursorPosition();
             var row = loc.row;
@@ -123,7 +126,7 @@ angular.module("easyFeedback")
             var target_line = editor.getSession().getLine(selected.row);
             editor.selection.setSelectionRange(Util.extract_numrange(
                 target_line, selected.row, selected.column));
-        };
+        }
 
         function reset_editor () {
             var parsed = TemplateManager.get_parsed_current();
@@ -135,6 +138,30 @@ angular.module("easyFeedback")
             });
             return $scope.total_anchor;
         }
+
+        // this function along with the replace_current_line handler, implement
+        // the hotkeys for inserting common feedback. This function sends an
+        // event to the other editor that has the common feedback. The other
+        // edtior then sends a replace_current_line event back, depending on
+        // whether there is something in lineno.
+        function get_common_feedback (lineno) {
+            $rootScope.$broadcast("get_common_feedback", lineno);
+        }
+
+        $rootScope.$on("replace_current_line", function (_, new_line) {
+            var row = editor.getCursorPosition().row;
+            var illegal = $scope.anchor_list.some(function (a) {
+                return a.ace_anchor.row === row;
+            });
+            if (illegal) {
+                return;
+            }
+            doc.removeLines(row, row);
+            doc.insertLines(row, [new_line]);
+            var len = new_line.length;
+            // put cursor at the end of the new line
+            editor.selection.setSelectionRange(new Range(row, len, row, len));
+        });
 
         $rootScope.$on("view_feedback", function (_, student) {
             console.log(student)
@@ -153,8 +180,18 @@ angular.module("easyFeedback")
 
         $rootScope.$on("focus_editor", function () {
             editor.focus();
-            $scope.jump_to_next();
+            jump_to_next_anchor();
         });
+
+        $scope.hotkeys = {
+            "Tab": jump_to_next_anchor,
+            "ctrl+g": save_and_grade_next
+        };
+
+        for (var i = 1; i < 10; i++) {
+            $scope.hotkeys["ctrl+" + i] =
+                get_common_feedback.bind(null, i - 1);
+        }
     };
 
     function make_anchors (anchors, doc) {
