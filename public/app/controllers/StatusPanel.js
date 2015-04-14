@@ -36,19 +36,15 @@ angular.module("easyFeedback")
         return "Needs Grading";
     };
 
-    $scope.commit_feedback = function () {
-        $rootScope.$emit("commit_feedback");
-    };
+    $scope.commit_feedback = emit_and_focus.bind(null, "commit_feedback");
+    $scope.commit_and_advance = emit_and_focus.bind(null,
+                                                    "commit_and_advance");
+    $scope.reset_editor = emit_and_focus.bind(null, "reset_editor");
 
-    $scope.reset_editor = function () {
-        $rootScope.$emit("reset_editor");
+    function emit_and_focus (event_name) {
+        $rootScope.$emit(event_name);
         $rootScope.$emit("focus_editor");
-    };
-
-
-    $rootScope.$on("students_skipped", function (_, students) {
-        $scope.skipped_students = students;
-    });
+    }
 
     update_data();
     function update_data () {

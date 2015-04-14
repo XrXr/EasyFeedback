@@ -14,13 +14,14 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
         $rootScope.$on("view_feedback", view_feedback);
         $rootScope.$on("focus_editor", focus_editor);
         $rootScope.$on("commit_feedback", commit_feedback);
+        $rootScope.$on("commit_and_advance", commit_and_advance);
         // initialize the editor after fetching the current template
         // TODO: some notice about loading the template
         TemplateManager.fetch_current().then(initialize_editor);
         // make the hotkey mapping object
         $scope.hotkeys = {
             "Tab": jump_to_next_anchor,
-            "ctrl+g": save_and_grade_next
+            "ctrl+g": commit_and_advance
         };
         for (var i = 1; i < 10; i++) {
             var key = "ctrl+" + i;
@@ -39,17 +40,23 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
         // TODO: protect from selecting entire anchor line(s) and deleting
         function update_total (delta) {
             $timeout(function () {
-                var row_changed = delta.data.range.start.row;
+                // protect anchor lines
+                delta = delta.data;
+                var row_changed = delta.range.start.row;
                 var changed_line = session.getLine(row_changed);
                 $scope.anchor_list.forEach(function (anchor) {
-                    if (anchor.ace_anchor.row === row_changed &&
-                        !anchor.guard.test(changed_line)) {
-                        no_update(function () {
-                            session.getUndoManager().undo(true);
-                        });
-                        return;
+                    if (anchor.ace_anchor.row === row_changed) {
+                        if (!anchor.guard.test(changed_line) ||
+                            (delta.action === "removeText" &&
+                            changed_line === delta.text)) {
+                            return no_update(function () {
+                                session.getUndoManager().undo(true);
+                            });
+                        }
                     }
+
                 });
+                // update the total
                 var total = 0;
                 var total_anchor = $scope.total_anchor.ace_anchor;
                 $scope.anchor_list.forEach(function (anchor) {
@@ -111,7 +118,7 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
             };
         }
 
-        function save_and_grade_next () {
+        function commit_and_advance () {
             var info = extract_info();
             FeedbackStorage.advance(info.text, info.total_grade, info.anchors);
             reset_editor();
