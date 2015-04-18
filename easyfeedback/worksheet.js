@@ -1,3 +1,6 @@
+var FEEDBACK_COLUMN = 9;
+var GRADE_COLUMN = 4;
+
 var first_row =
     ["Identifier", "Full name", "Email address", "Status", "Grade",
      "Maximum Grade","Grade can be changed","Last modified (submission)",
@@ -19,5 +22,9 @@ function validate (csv_arr) {
     return true;
 }
 
-module.exports.validate = validate;
-module.exports.first_row = first_row;
+module.exports = {
+    validate: validate,
+    first_row: first_row,
+    FEEDBACK_COLUMN: FEEDBACK_COLUMN,
+    GRADE_COLUMN: GRADE_COLUMN
+};
