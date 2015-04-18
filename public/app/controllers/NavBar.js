@@ -7,4 +7,12 @@ angular.module("easyFeedback")
             controller: "TemplatePicker"
         });
     };
+
+    $scope.login = function () {
+        console.log("wtf");
+        ngDialog.open({
+            template: "app/partials/login.html",
+            controller: "Login"
+        });
+    };
 });
