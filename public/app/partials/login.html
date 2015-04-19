@@ -1,8 +1,17 @@
 <div class="container-fluid">
   <h3 class="text-center">Easy Feedback</h3>
   <div class="form-group">
-    <input class="form-control" type="text" placeholder="Username"></input>
-    <input class="form-control" type="password" placeholder="Password"></input>
+    <input class="form-control" ng-model="username" type="text" placeholder="Username"></input>
+    <input class="form-control" ng-model="password" type="password" placeholder="Password"></input>
   </div>
-  <button class="btn btn-primary center-block">Sign in</button>
+  <div ng-switch on="error_status">
+    <div class="alert alert-danger" ng-switch-when="bad_login" role="alert">The username or password you entered is incorrect</div>
+    <div class="alert alert-danger" ng-switch-when="internal" role="alert">We have encountered an internal error, please try again later</div>
+    <div class="alert alert-danger" ng-switch-when="username_too_short" role="alert">The username you entered is too short</div>
+    <div class="alert alert-danger" ng-switch-when="password_too_short" role="alert">The password you entered is too short</div>
+    <div class="alert alert-danger" ng-switch-when="user_already_exist" role="alert">The username you entered is taken. Please try a different username</div>
+  </div>
+  <div class="alert alert-success" ng-if="registration_successful">Registration successful</div>
+  <button class="btn btn-success center-block" ng-click="login()">Sign in</button>
+  <button class="btn btn-primary center-block" ng-click="register()">Register</button>
 </div>

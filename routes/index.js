@@ -5,12 +5,12 @@ var babyparse = require("babyparse");
 var fs = require("fs");
 var worksheet = require("../easyfeedback/worksheet");
 var marked = require("marked");
-var storage = require("../easyfeedback/storageMan");
-var default_retrieve = storage.default_retrieve;
-var default_commit = storage.default_commit;
-
 var FEEDBACK_COLUMN = worksheet.FEEDBACK_COLUMN;
 var GRADE_COLUMN = worksheet.GRADE_COLUMN;
+// below are set by newRouter()
+var default_retrieve;
+var default_commit;
+var storage;
 
 router.post("/upload_worksheet", function(req, res) {
     var form = new multiparty.Form();
@@ -26,7 +26,7 @@ router.post("/upload_worksheet", function(req, res) {
             last_index: 0
         }, function (err) {
             if (err) {
-                return send_error(res, "Internal error");
+                return send_error(res, err);
             }
             end_request(res);
         });
@@ -38,7 +38,8 @@ router.post("/upload_worksheet", function(req, res) {
 router.get("/get_status", function (req, res) {
     default_retrieve(req.session, function (err, store) {
         if (err) {
-            return send_error(res, "Internal error");
+            console.log(err.stack)
+            return send_error(res, err);
         }
         if (!store.worksheet) {
             return send_error(res, "No worksheet uploaded");
@@ -54,7 +55,7 @@ router.get("/get_status", function (req, res) {
 
         function parse_csv (err, data) {
             if (err) {
-                return send_error(res, "Internal error");
+                return send_error(res, err);
             }
             var parsed = babyparse.parse(data, {skipEmptyLines: true});
             var csv = parsed.data;
@@ -67,8 +68,8 @@ router.get("/get_status", function (req, res) {
             var student_list = csv.map(function (row, index) {
                 var student = {
                     name: row[1],
-                    // the first column always start with "Participant ", the rest
-                    // is the student number
+                    // the first column always start with "Participant ",
+                    // the rest is the student number
                     student_number: row[0].slice(12),
                     feedback: row[9],
                     grade: row[4]
@@ -84,7 +85,7 @@ router.get("/get_status", function (req, res) {
             fs.unlink(tmp_file_path);  // remove the temporary file
             default_commit(req.session, store, function (err) {
                 if (err) {
-                    return send_error(res, "Internal error");
+                    return send_error(res, err);
                 }
                 res.json({student_list: student_list});
             });
@@ -102,12 +103,12 @@ router.put("/change_current_template", function (req, res) {
     if (isNumber(req.body.new_current)) {
         default_retrieve(req.session, function (err, store) {
             if (err) {
-                return send_error(res, "Internal error");
+                return send_error(res, err);
             }
             store.templates.current = Number(req.body.new_current);
             default_commit(req.session, store, function () {
                 if (err) {
-                    return send_error(res, "Internal error");
+                    return send_error(res, err);
                 }
                 end_request(res);
             });
@@ -129,12 +130,12 @@ router.put("/new_template", function (req, res) {
     }
     default_retrieve(req.session, function (err, store) {
         if (err) {
-            return send_error(res, "Internal error");
+            return send_error(res, err);
         }
         store.templates.list.push(req.body.new_template);
         default_commit(req.session, store, function () {
             if (err) {
-                return send_error(res, "Internal error");
+                return send_error(res, err);
             }
             end_request(res);
         });
@@ -145,13 +146,13 @@ router.get("/get_current_template", function (req, res) {
     // TODO: these initialization should be moved after implementing login
     default_retrieve(req.session, function (err, store) {
         if (err) {
-            return send_error(res, "Internal error");
+            return send_error(res, err);
         }
         if (!store.templates) {
             store.templates = get_predefined_templates();
             return default_commit(req.session, store, function (err) {
                 if (err) {
-                    return send_error(res, "Internal error");
+                    return send_error(res, err);
                 }
                 var templates = store.templates;
                 res.json({
@@ -169,7 +170,7 @@ router.get("/get_current_template", function (req, res) {
 router.get("/get_all_templates", function (req, res) {
     default_retrieve(req.session, function (err, store) {
         if (err) {
-            return send_error(res, "Internal error");
+            return send_error(res, err);
         }
         res.json({templates: store.templates});
     });
@@ -180,14 +181,13 @@ router.post("/new_feedback", function (req, res) {
     var index = req.body.student_index;
     default_retrieve(req.session, function (err, store) {
         if (err) {
-            return send_error(res, "Internal error");
+            return send_error(res, err);
         }
         if (!store.student_list) {
             return send_error(res, "Update without list");
         }
         if (!student) {
-            res.status(400);
-            return send_error(res, "Bad request");
+            return send_error(res.status(400), "Bad request");
         }
         //  TODO: add validation here
         store.last_index = req.body.new_index;
@@ -198,7 +198,7 @@ router.post("/new_feedback", function (req, res) {
         store.csv[index][GRADE_COLUMN] = student.grade;
         default_commit(req.session, store, function (err) {
             if (err) {
-                return send_error(res, "Internal error");
+                return send_error(res, err);
             }
             end_request(res);
         });
@@ -208,7 +208,7 @@ router.post("/new_feedback", function (req, res) {
 router.get("/render_worksheet", function (req, res) {
     default_retrieve(req.session, function (err, store) {
         if (err) {
-            return send_error(res, "Internal error");
+            return send_error(res, err);
         }
         var csv = store.csv;
         if (!csv) {
@@ -225,11 +225,50 @@ router.get("/render_worksheet", function (req, res) {
     });
 });
 
+router.get("/dashboard", function (req, res, next) {
+    if (!storage.is_login(req.session)) {
+        return res.send("Not logged in");
+    }
+    next();
+});
+
+router.post("/login", function (req, res) {
+    if (storage.is_login(req.session)) {
+        return send_error(res, "Already logged in");
+    }
+    var username = req.body.username;
+    var password = req.body.password;
+    storage.login(req.session, username, password, function (err, success) {
+        if (err) {
+            return send_error(res, err);
+        }
+        res.json({success: success});
+    });
+});
+
+router.post("/register", function (req, res) {
+    var username = req.body.username;
+    var password = req.body.password;
+    storage.create_user(username, password, function (err, data) {
+        if (err) {
+            if (err instanceof TypeError) {
+                return send_error(res.status(400), "Bad request");
+            }
+            return send_error(res, err);
+        }
+        res.json(data);
+    });
+});
+
 /**
   Send a error message through a res object using JSON
 */
-function send_error (res, message) {
-    res.json({error: message});
+function send_error (res, message_or_error) {
+    if (typeof message_or_error === "string") {
+        return res.json({error: message_or_error});
+    }
+    console.error(message_or_error.stack);
+    return send_error(res, "Internal error");
 }
 /**
   End a request and send nothing
@@ -253,4 +292,23 @@ function get_predefined_templates () {
     };
 }
 
-module.exports = router;
+/*
+  Module users call this function to get the route object. Since storageMan
+  does some async operations on initialization and the router depends on that,
+  we delay the export by asking the user to pass in a callback.
+*/
+function newRouter (cb) {
+    require("../easyfeedback/storageMan")(function (err, storage_) {
+        if (err) {
+            throw err;
+        }
+        storage = storage_;
+        default_commit = storage.default_commit;
+        default_retrieve = storage.default_retrieve;
+        var user = require('./user');
+        router.use("/user", user(storage));
+        return cb(null, router);
+    });
+}
+
+module.exports = newRouter;
