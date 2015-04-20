@@ -259,20 +259,8 @@ function initialize (cb) {
         }
         if (config.backing === "memory") {
             var mem = require("./storage_backing/memory");
-            mem.MemoryStorage(function (err, session_backing) {
-                make_gates(err, session_backing);
-                mem.MemoryCredentialStorage(function (err, cred_backing) {
-                    if (err) {
-                        throw err;
-                    }
-                    mem.MemoryStorage(function (err, usr_backing) {
-                        if (err) {
-                            throw err;
-                        }
-                        return add_login_functions(cred_backing, usr_backing);
-                    });
-                });
-            });
+            use_backing(mem.MemoryStorage, mem.MemoryCredentialStorage,
+                        mem.MemoryStorage);
         } else {
             throw Error("Unknown backing storage type");
         }
@@ -305,6 +293,29 @@ function initialize (cb) {
             is_login: is_login,
             get_username: get_username
         };
+    }
+
+    // Initialize the backing storages. This function should only be called
+    // once
+    function use_backing (user_session_backing, credential_backing,
+                          template_backing) {
+        user_session_backing(function (err, session_backing) {
+            if (err) {
+                throw err;
+            }
+            make_gates(err, session_backing);
+            credential_backing(function (err, cred_backing) {
+                if (err) {
+                    throw err;
+                }
+                template_backing(function (err, usr_backing) {
+                    if (err) {
+                        throw err;
+                    }
+                    return add_login_functions(cred_backing, usr_backing);
+                });
+            });
+        });
     }
 
     function add_login_functions (credential_backing, user_data_backing) {
