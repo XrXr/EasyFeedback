@@ -178,7 +178,6 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
         }
 
         function view_feedback (_, student) {
-            console.log(student)
             var anchors = student.anchors;
             var feedback = student.feedback;
             if (!FeedbackStorage.is_graded(student) || !anchors) {

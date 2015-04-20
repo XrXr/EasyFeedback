@@ -1,5 +1,5 @@
-angular.module("easyFeedback")
-.factory("FeedbackStorage", function ($http) {
+angular.module("easyFeedback").
+factory("FeedbackStorage", function ($http) {
     var total_submitted = 0;
     var total_graded = 0;
     var current_index = 0;
@@ -30,19 +30,21 @@ angular.module("easyFeedback")
           Advance the current student index and send feedback to the server
           @param {string} feedback - The student's feedback to send
           @param {number} grade - The student's grade
-          @return {array} array of students skipped due to no submission
         */
         advance: function (feedback, grade, anchors) {
-            var student_index = current_index;
+            var old_current_index = current_index;
+            update_feedback(current_index, feedback, grade, anchors);
             maybe_advance_index();  // TODO: case of last student not submitted
-            var skipped = skip_until_valid();
-            commit_feedback(student_index, current_index, feedback, grade,
-                            anchors);
-            return skipped;
+            skip_until_valid();
+            post_feedback(old_current_index, current_index);
         },
-        commit_feedback: function () {
-            commit_feedback.bind(null, current_index, current_index).
-                            apply(null, arguments);
+        /**
+          Update feedback of the current student and send the updated feedback
+          to the server
+        */
+        commit_feedback: function (feedback, grade, anchors) {
+            update_feedback(feedback, grade, anchors);
+            post_feedback(current_index, current_index);
         },
         get_current: function () {
             return students[current_index];
@@ -56,31 +58,37 @@ angular.module("easyFeedback")
         get_total_submitted: function () {
             return total_submitted;
         },
-        get students() {
+        get students () {
             return students;
         },
         get current_index () {
             return current_index;
         },
-        set current_index(i) {
+        set current_index (i) {
             current_index = i;
         },
         is_graded: is_graded
     };
 
-    function commit_feedback (oldi, newi, feedback, grade, anchors) {
-        var to_send = students[oldi];
-        if (!is_graded(to_send)) {
+    // update the feedback of a student locally
+    function update_feedback (student_index, feedback, grade, anchors) {
+        var target = students[student_index];
+        if (!is_graded(target)) {
             // only increment when it was not graded before
             total_graded++;
         }
-        to_send.feedback = feedback;
-        to_send.grade = grade;
-        to_send.anchors = anchors;
+        target.feedback = feedback;
+        target.grade = grade;
+        target.anchors = anchors;
+    }
+
+    // send feedback to the server
+    function post_feedback (student_index, new_index) {
+        var to_send = students[student_index];
         $http.post("/new_feedback", {
             student: to_send,
-            student_index: oldi,
-            new_index: newi,
+            student_index: student_index,
+            new_index: new_index,
         });  // TODO: add mechanism for request status
     }
 

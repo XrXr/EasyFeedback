@@ -1,6 +1,7 @@
 angular.module("easyFeedback")
 .controller("StatusPanel", function ($scope, ngDialog, $http,
-                                     FeedbackStorage, $rootScope) {
+                                     FeedbackStorage, $rootScope,
+                                     GradingSessionIdInterceptor) {
     $scope.storage = FeedbackStorage;
     $scope.skipped_students = [];
 
@@ -50,15 +51,13 @@ angular.module("easyFeedback")
     function update_data () {
         //  TODO: add loading spinner
         $http.get("/get_status").success(function(data, status) {
-            console.log(data)
             $scope.error_message = "";
             if (data.error) {
                 $scope.error_message = data.error;
-
                 return;
             }
-            $scope.skipped_students = FeedbackStorage.update_data(
-                                        data.student_list, data.last_index);
+            GradingSessionIdInterceptor.set_grading_session_id(data.id);
+            FeedbackStorage.update_data(data.student_list, data.last_index);
             $scope.view_feedback(FeedbackStorage.current_index);
         }).error(function (data) {
             console.log(data)

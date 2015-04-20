@@ -1,5 +1,6 @@
 var FEEDBACK_COLUMN = 9;
 var GRADE_COLUMN = 4;
+var STATUS_COLUMN = 3;
 
 var first_row =
     ["Identifier", "Full name", "Email address", "Status", "Grade",
@@ -26,5 +27,6 @@ module.exports = {
     validate: validate,
     first_row: first_row,
     FEEDBACK_COLUMN: FEEDBACK_COLUMN,
-    GRADE_COLUMN: GRADE_COLUMN
+    GRADE_COLUMN: GRADE_COLUMN,
+    STATUS_COLUMN: STATUS_COLUMN
 };

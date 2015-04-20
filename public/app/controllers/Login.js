@@ -36,7 +36,7 @@ angular.module("easyFeedback")
             if (typeof data.reason !== "string") {
                 return set_internal_error();
             }
-            console.log(data.reason)
+            console.log(data.reason);
             $scope.error_status = data.reason;
         }).error(set_internal_error);
     };
