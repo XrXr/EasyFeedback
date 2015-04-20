@@ -43,6 +43,7 @@ angular.module("easyFeedback")
             }
         }
         return {
+            raw: raw_template,
             text: str_array.join("\n"),
             anchors: {
                 total: total_anchors,
@@ -82,12 +83,29 @@ angular.module("easyFeedback")
      */
     function fetch_all () {
         return $http.get("/get_all_templates").then(function (response) {
-            return response.data.templates;
+            return response.data.template_list;
         });
     }
 
+    /*
+      update the current template in use and inform the server about the change
+      @param {string} raw_template - the new template
+      @return {promise} the request promise for informing the server
+    */
     function update_current (raw_template) {
         parsed_current = parse(raw_template);
+        return $http.put("/change_current_template", {
+            new_template: raw_template
+        });
+    }
+
+    /*
+      Inform the server about new prefered template
+    */
+    function update_prefered (prefered) {
+        return $http.post("/new_prefered_template", {
+            new_prefered: prefered
+        });
     }
 
     return {
@@ -95,6 +113,7 @@ angular.module("easyFeedback")
         get_parsed_current: get_parsed_current,
         fetch_current: fetch_current,
         fetch_all: fetch_all,
-        update_current: update_current
+        update_current: update_current,
+        update_prefered: update_prefered
     };
 });

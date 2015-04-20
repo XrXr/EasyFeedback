@@ -33,6 +33,9 @@ function MemoryCredentialStorage (cb) {
                 if (typeof password !== "string") {
                     return cb(TypeError("Password must be string"));
                 }
+                if (!hashed) {  // not a user on record
+                    return cb(null, false);
+                }
                 bcrypt.compare(password, hashed, cb);
             });
         }

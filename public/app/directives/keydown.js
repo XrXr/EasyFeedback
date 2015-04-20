@@ -7,7 +7,7 @@
 angular.module("easyFeedback")
 .directive("keydown", function () {
     return {
-        priority: 1,
+        priority: 3,
         restrict: "A",
         link: link
     };

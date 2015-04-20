@@ -12,6 +12,6 @@
     <div class="alert alert-danger" ng-switch-when="user_already_exist" role="alert">The username you entered is taken. Please try a different username</div>
   </div>
   <div class="alert alert-success" ng-if="registration_successful">Registration successful</div>
-  <button class="btn btn-success center-block" ng-click="login()">Sign in</button>
-  <button class="btn btn-primary center-block" ng-click="register()">Register</button>
+  <button class="btn btn-success center-block" ng-click="login(username, password)">Sign in</button>
+  <button class="btn btn-primary center-block" ng-click="register(username, password)">Register</button>
 </div>

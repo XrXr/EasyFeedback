@@ -1,11 +1,14 @@
 /*
-  An abstraction layer on top of express session. Provide interface for storing
-  per-session data and persistent data. All the callbacks in this module take
-  two parameters -- err and data.
+  An abstraction layer on top of express session and any kind of backing
+  presistent sotrage. Provide interface for storing per-session data and
+  persistent data. All the callbacks in this module take two parameters --
+  err and data.
 */
 var uuid = require("uuid");
 var readConfig = require("./configReader").readConfig;
 var is_object = require("is-object");
+var utils = require("../easyfeedback/utils");
+var predefined_templates = utils.predefined_templates;
 
 /*
   Retrieve from per-session storage
@@ -85,7 +88,6 @@ function make_grading_sess_gates (backing) {
             if (err) {
                 return cb(err);
             }
-            set_active_grading_sess(session, id);
             return cb(null, id);
         });
     }
@@ -126,50 +128,6 @@ function make_user_data_gates (backing) {
     return {
         user_data_commit: user_data_commit,
         user_data_retrieve: user_data_retrieve
-    };
-}
-
-/*
-  Make a pair of gate functions named default_retrieve and default_commit that
-  automatically select data source/destination depending on the log in status
-  of the user
-*/
-function make_default_gates (temp_retrieve, temp_commit, session_retrieve,
-                             session_update) {
-    /*
-      Retrive an object used for storage. The source of the object depends on
-      the status data stored in the session object passed in. A login session
-      retrieves from a different source than a regular session
-      @param {object} session - express session object
-      @param {function} cb - callback called with retrieved data
-    */
-    function default_retrieve (session, cb) {
-        if (is_login(session)) {
-            var active_grading_session = get_active_grading_sess(session);
-            if (!has_active_grading_session(session)) {
-                return cb(null, {});  // not active session
-            }
-            return session_retrieve(session, cb);
-        }
-        return temp_retrieve(session, cb);
-    }
-
-    /*
-      Commit an object used for storage. The destination of the object depends
-      on the status data stored in the session object passed in. A login
-      session commits to a different source than a regular session
-      @param {object} session - express session object
-      @param {function} cb - callback when done
-    */
-    function default_commit (session, data, cb) {
-        if (is_login(session)) {
-            return session_update(session, data.id, data, cb);
-        }
-        return temp_commit(session, data, cb);
-    }
-    return {
-        default_commit: default_commit,
-        default_retrieve: default_retrieve
     };
 }
 
@@ -231,18 +189,40 @@ function make_login_function (authenticate, get_user_data) {
                 return cb(err);
             }
             if (success) {
-                return get_user_data(username, function (err, data) {
-                    if (err) {
-                        return cb(err);
-                    }
-                    session._user = {
-                        username: username,
-                        data: data || {}
-                    };
-                    return cb(null, true);
-                });
+                session._user = {
+                    username: username,
+                };
             }
-            cb(null, false);
+            cb(null, success);
+        });
+    };
+}
+
+/*
+  Make a function that creates a user in the credential storage and initialize
+  some data in the user data backing
+*/
+function make_create_user (cred_create_user, set_user_data) {
+    return function (username, password, cb) {
+        cred_create_user(username, password, function (err, status) {
+            if (err) {
+                return cb(err);
+            }
+            // failed to create in credential store
+            if (!status.success) {
+                return cb(null, status);
+            }
+            var initial_user_data = {
+                active_session: undefined,
+                prefered_template: 0,
+                template_list: predefined_templates(),
+            };
+            set_user_data(username, initial_user_data, function (err) {
+                if (err) {
+                    return cb(err);
+                }
+                return cb(null, status);
+            });
         });
     };
 }
@@ -266,6 +246,29 @@ function initialize (cb) {
         }
     });
 
+    // Initialize the backing storages. This function should only be called
+    // once
+    function use_backing (user_session_backing, credential_backing,
+                          user_data_backing) {
+        user_session_backing(function (err, session_backing) {
+            if (err) {
+                throw err;
+            }
+            make_gates(err, session_backing);
+            credential_backing(function (err, cred_backing) {
+                if (err) {
+                    throw err;
+                }
+                user_data_backing(function (err, usr_backing) {
+                    if (err) {
+                        throw err;
+                    }
+                    return add_login_functions(cred_backing, usr_backing);
+                });
+            });
+        });
+    }
+
     function make_gates (err, backing) {
         if (err) {
             throw err;
@@ -274,13 +277,7 @@ function initialize (cb) {
         var session_retrieve = grading_sess_gates.session_retrieve;
         var session_update = grading_sess_gates.session_update;
         var create_new_session = grading_sess_gates.create_new_session;
-        var default_gates = make_default_gates(temp_retrieve, temp_commit,
-                                               session_retrieve,
-                                               session_update,
-                                               create_new_session);
         final_object = {
-            default_retrieve: default_gates.default_retrieve,
-            default_commit: default_gates.default_commit,
             temp_retrieve: temp_retrieve,
             temp_commit: temp_commit,
             user: {
@@ -295,37 +292,16 @@ function initialize (cb) {
         };
     }
 
-    // Initialize the backing storages. This function should only be called
-    // once
-    function use_backing (user_session_backing, credential_backing,
-                          template_backing) {
-        user_session_backing(function (err, session_backing) {
-            if (err) {
-                throw err;
-            }
-            make_gates(err, session_backing);
-            credential_backing(function (err, cred_backing) {
-                if (err) {
-                    throw err;
-                }
-                template_backing(function (err, usr_backing) {
-                    if (err) {
-                        throw err;
-                    }
-                    return add_login_functions(cred_backing, usr_backing);
-                });
-            });
-        });
-    }
-
     function add_login_functions (credential_backing, user_data_backing) {
         var authenticate = credential_backing.authenticate;
         var user_data_gates = make_user_data_gates(user_data_backing);
         final_object.login = make_login_function(authenticate,
                                                  user_data_backing.get);
-        final_object.create_user = credential_backing.create_user;
-        final_object.user_data_retrieve = user_data_gates.user_data_retrieve;
-        final_object.user_data_commit = user_data_gates.user_data_commit;
+        final_object.create_user =
+            make_create_user(credential_backing.create_user,
+                             user_data_backing.set);
+        final_object.user.data_retrieve = user_data_gates.user_data_retrieve;
+        final_object.user.data_commit = user_data_gates.user_data_commit;
         cb(null, final_object);
     }
 }

@@ -1,6 +1,6 @@
-angular.module("easyFeedback")
-.controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
-                                        $http, $rootScope) {
+angular.module("easyFeedback").
+controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
+                                       $http, $rootScope, LoginManager) {
     $scope.adding_template = false;
     $scope.loading = true;
     $scope.template_title_invalid = false;
@@ -10,10 +10,18 @@ angular.module("easyFeedback")
 
     $scope.on_editor = function (editor) {
         var session = editor.getSession();
-        editor.setReadOnly(true);
-
-        TemplateManager.fetch_all().then(show_templates);
         var current_selected = null;
+        var logged_in = !!LoginManager.get_logged_in_user();
+        editor.setReadOnly(logged_in);
+
+        if (logged_in) {
+            TemplateManager.fetch_all().then(show_templates);
+        } else {
+            editor.on("change", render_temporary_template);
+            $timeout(function () {
+                render_template(TemplateManager.get_parsed_current().raw);
+            }, 0);
+        }
 
         $scope.input_class = function () {
             return $scope.template_title_invalid ? "has-error" : "";
@@ -68,10 +76,17 @@ angular.module("easyFeedback")
         $scope.template_selected = function (i) {
             var raw_template = $scope.templates[i].text;
             current_selected = i;
-            TemplateManager.update_current(raw_template);
             render_template(raw_template);
             $rootScope.$emit("reset_editor");
-            inform_server(i);
+            // fire and forget
+            TemplateManager.update_current(raw_template);
+            TemplateManager.update_prefered(i);
+        };
+
+        // only for non logged in users
+        $scope.update_current_template = function () {
+            TemplateManager.update_current(session.getValue());
+            $rootScope.$emit("reset_editor");
         };
 
         function render_temporary_template () {
@@ -84,10 +99,6 @@ angular.module("easyFeedback")
             var parsed = TemplateManager.parse(raw_template);
             session.setValue(raw_template);
             $scope.$broadcast("mainEditorChange", parsed.text);
-        }
-
-        function inform_server (i) {
-            $http.put("/change_current_template", {new_current: i});
         }
 
         function show_templates (templates) {
