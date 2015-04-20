@@ -2,6 +2,8 @@
   A simple implementation of in-memory key-value backing storage. Used in
   storageMan
 */
+var bcrypt = require("bcrypt");
+
 function MemoryStorage (cb) {
     var data = new Map();
     cb(null, {
@@ -24,18 +26,14 @@ function MemoryCredentialStorage (cb) {
         });
 
         function authenticate (username, password, cb) {
-            user_info.get(username, function (_, pwd) {
+            user_info.get(username, function (_, hashed) {
                 if (typeof username !== "string") {
                     return cb(TypeError("Username must be string"));
                 }
                 if (typeof password !== "string") {
                     return cb(TypeError("Password must be string"));
                 }
-                if (typeof pwd === "string" && pwd.length > 0 &&
-                    pwd === password) {
-                    return cb(null, true);
-                }
-                return cb(null, false);
+                bcrypt.compare(password, hashed, cb);
             });
         }
 
@@ -59,13 +57,18 @@ function MemoryCredentialStorage (cb) {
                 });
             }
             user_info.get(username, function (_, pwd) {
-                if (typeof pwd === "undefined") {
-                    return user_info.set(username, password, function () {
-                        cb(null, {success: true});
+                if (typeof pwd !== "undefined") {
+                    return cb(null, {
+                        success: false, reason: "user_already_exist"
                     });
                 }
-                return cb(null, {
-                    success: false, reason: "user_already_exist"
+                bcrypt.hash(password, 10, function (err, hashed) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    user_info.set(username, hashed, function () {
+                        cb(null, {success: true});
+                    });
                 });
             });
         }
