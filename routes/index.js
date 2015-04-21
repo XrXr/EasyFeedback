@@ -245,19 +245,23 @@ router.post("/register", function (req, res) {
 // routes in user_router are only for logged in users
 user_router.use(authenticated_only);
 
-user_router.post("/add_template", function (req, res) {
-    var new_template = req.body.new_template;
-    if (!new_template || typeof(new_template) !== "object") {
+user_router.post("/new_template_entry", function (req, res, next) {
+    var new_entry = req.body.new_entry;
+    if (!new_entry || typeof(new_entry) !== "object") {
         return send_error(res, "Bad request");
     }
-    if (!new_template.hasOwnProperty("title") ||
-        !new_template.hasOwnProperty("text")) {
+    if (!new_entry.hasOwnProperty("title") ||
+        !new_entry.hasOwnProperty("text")) {
         return send_error(res, "Invalid template");
     }
+    req.easy_feedback = {
+        new_entry: new_entry
+    };
     next();
 }, retrieve_user_data, function (req, res, next) {
     var user_data = req.easy_feedback.user_data;
-    user_data.template_list.push(new_template);
+    user_data.template_list.push(req.easy_feedback.new_entry);
+    next();
 }, commit_user_data, function (req, res) {
     end_request(res);
 });
@@ -271,6 +275,7 @@ user_router.post("/new_prefered_template", function (req, res, next) {
 }, retrieve_user_data, function (req, _, next) {
     var user_data = req.easy_feedback.user_data;
     user_data.prefered_template = req.body.new_prefered;
+    next();
 }, commit_user_data, end_request_m);
 
 user_router.get("/all_templates", retrieve_user_data, function (req, res) {

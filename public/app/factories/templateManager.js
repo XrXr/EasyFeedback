@@ -103,8 +103,14 @@ angular.module("easyFeedback")
       Inform the server about new prefered template
     */
     function update_prefered (prefered) {
-        return $http.post("/new_prefered_template", {
+        return $http.post("/user/new_prefered_template", {
             new_prefered: prefered
+        });
+    }
+
+    function send_new_template_entry (template_entry) {
+        return $http.post("/user/new_template_entry", {
+            new_entry: template_entry
         });
     }
 
@@ -114,6 +120,7 @@ angular.module("easyFeedback")
         fetch_current: fetch_current,
         fetch_all: fetch_all,
         update_current: update_current,
-        update_prefered: update_prefered
+        update_prefered: update_prefered,
+        send_new_template_entry: send_new_template_entry
     };
 });

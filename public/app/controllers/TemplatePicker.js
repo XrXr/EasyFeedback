@@ -1,7 +1,6 @@
 angular.module("easyFeedback").
 controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
-                                       $http, $rootScope, LoginManager,
-                                       $window) {
+                                       $rootScope, LoginManager, $window) {
     $scope.template_entries = [];
     $scope.adding_template = false;
     $scope.loading = true;
@@ -66,13 +65,14 @@ controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
             $scope.loading = true;
             $scope.template_title_invalid = false;
             editor.setReadOnly(true);
-            $http.post("/user/new_template", {
-                new_template: new_template
-            }).success(function () {
+            TemplateManager.send_new_template_entry(new_template).
+                success(finish_adding);
+
+            function finish_adding () {
                 $scope.template_entries.push(new_template);
                 $scope.loading = false;
                 $scope.cancel_adding();
-            });
+            }
         };
 
         $scope.template_selected = function (i) {
@@ -89,10 +89,10 @@ controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
             var raw_template = $scope.template_entries[i].text;
             current_selected = i;
             render_template(raw_template);
-            $rootScope.$emit("reset_editor");
             // TODO: this is fire and forget, maybe add spinner?
             TemplateManager.update_current(raw_template);
             TemplateManager.update_prefered(i);
+            $rootScope.$emit("reset_editor");
         };
 
         // only for non logged in users
