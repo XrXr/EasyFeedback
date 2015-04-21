@@ -17,12 +17,13 @@ var is_object = require("is-object");
 var storage;
 var is_login;
 
+router.use(res_error);
 router.use(res_bad_request);
 
 router.post("/upload_worksheet", function (req, res, next) {
     var form = new multiparty.Form();
     form.on("error", function(err) {
-        return send_error(res, "Bad file");
+        return res.error("Bad file");
     });
     form.on("file", function(name, val) {
         var tmp_file_path = val.path;
@@ -30,12 +31,12 @@ router.post("/upload_worksheet", function (req, res, next) {
 
         function parse_csv (err, data) {
             if (err) {
-                return send_error(res, err);
+                throw err;
             }
             var parsed = babyparse.parse(data, {skipEmptyLines: true});
             var csv = parsed.data;
             if (!worksheet.validate(csv) || parsed.errors.length > 0) {
-                return send_error(res, "Bad worksheet");
+                return res.error("Bad worksheet");
             }
             csv.shift();   // the first line does not contain any info
             var submitted = /Submitted for grading/g;
@@ -88,7 +89,7 @@ router.post("/upload_worksheet", function (req, res, next) {
 
     function set_active_session (err, id) {
         if (err) {
-            return send_error(res, err);
+            throw err;
         }
         user_data.active_session = id;
         req.easy_feedback.new_session_id = id;
@@ -102,7 +103,7 @@ router.get("/get_status", ensure_grading_session_id);
 router.get("/get_status", retrieve_grading_session, function (req, res) {
     var sess = req.easy_feedback.grading_session;
     if (!is_in_progress(sess)) {
-        return send_error(res, "No worksheet uploaded");
+        return res.error("No worksheet uploaded");
     }
     return res.json({
         id: sess.id,
@@ -158,10 +159,10 @@ router.post("/new_feedback", function (req, res, next) {
     var grading_session_id = req.id;
     var sess = req.easy_feedback.grading_session;
     if (!sess.student_list) {
-        return send_error(res, "Update without list");
+        return res.error("Update without list");
     }
     if (!student) {
-        return send_error(res.status(400), "Bad request");
+        return res.bad_request();
     }
     //  TODO: add validation here
     sess.last_index = req.body.new_index;
@@ -178,7 +179,7 @@ router.get("/render_worksheet", retrieve_grading_session, function (req, res) {
     var sess = req.easy_feedback.grading_session;
     var csv = sess.csv;
     if (!csv) {
-        return send_error(res, "Nothing to render");
+        return res.error("Nothing to render");
     }
     var rendered_list = csv.map(function (row) {
         var new_row = row.slice();
@@ -192,13 +193,13 @@ router.get("/render_worksheet", retrieve_grading_session, function (req, res) {
 
 router.post("/login", function (req, res) {
     if (is_login(req.session)) {
-        return send_error(res, "Already logged in");
+        return res.error("Already logged in");
     }
     var username = req.body.username;
     var password = req.body.password;
     storage.login(req.session, username, password, function (err, success) {
         if (err) {
-            return send_error(res, err);
+            throw err;
         }
         if (!success) {
             return res.json({success: false, reason: "bad_login"});
@@ -218,11 +219,11 @@ router.post("/login", function (req, res) {
 
     function change_active_session (err, new_session_id) {
         if (err) {
-            return send_error(res, "Failed to create session");
+            return res.error("Failed to create session");
         }
         storage.user.data_retrieve(req.session, function (err, user_data) {
             if (err) {
-                return send_error(res, err);
+                throw err;
             }
             user_data.active_session = new_session_id;
             res.json({success: true});
@@ -235,7 +236,7 @@ router.post("/register", function (req, res) {
     var password = req.body.password;
     storage.create_user(username, password, function (err, data) {
         if (err) {
-            return send_error(res, err);
+            throw err;
         }
         res.json(data);
     });
@@ -260,8 +261,10 @@ function (req, res, next) {
 }, commit_grading_session, end_request_m);
 
 // routes in user_router are only for logged in users
-user_router.use(authenticated_only);
+
+user_router.use(res_error);
 user_router.use(res_bad_request);
+user_router.use(authenticated_only);
 
 user_router.post("/new_template_entry", function (req, res, next) {
     var new_entry = req.body.new_entry;
@@ -270,7 +273,7 @@ user_router.post("/new_template_entry", function (req, res, next) {
     }
     if (!new_entry.hasOwnProperty("title") ||
         !new_entry.hasOwnProperty("text")) {
-        return send_error(res, "Invalid template");
+        return res.error("Invalid template");
     }
     req.easy_feedback = {
         new_entry: new_entry
@@ -345,7 +348,7 @@ function retrieve_grading_session (req, res, next) {
 
     function finish_retrieve (err, grading_session) {
         if (err) {
-            return send_error(err);
+            throw err;
         }
         req.easy_feedback = {
             grading_session: grading_session || {}
@@ -369,7 +372,7 @@ function commit_grading_session (req, res, next) {
 
     function finish_commit (err) {
         if (err) {
-            return send_error(err);
+            throw err;
         }
         next();
     }
@@ -380,7 +383,7 @@ function commit_grading_session (req, res, next) {
 */
 function authenticated_only (req, res, next) {
     if (!is_login(req.session)) {
-        return send_error(res, "Not logged in");
+        return res.error("Not logged in");
     }
     next();
 }
@@ -390,7 +393,7 @@ function authenticated_only (req, res, next) {
 function retrieve_user_data (req, res, next) {
     storage.user.data_retrieve(req.session, function (err, data) {
         if (err) {
-            return send_error(res, err);
+            throw err;
         }
         if (!req.easy_feedback) {
             req.easy_feedback = {};
@@ -424,10 +427,20 @@ function commit_user_data (req, res, next) {
     var to_send = req.easy_feedback.user_data;
     storage.user.data_commit(req.session, to_send, function (err, status) {
         if (err) {
-            return send_error(res, err);
+            throw err;
         }
         next();
     });
+}
+
+/**
+  Send a error message in a format
+*/
+function res_error (req, res, next) {
+    res.error = function (message) {
+        return res.json({error: message});
+    };
+    next();
 }
 
 /*
@@ -435,25 +448,14 @@ function commit_user_data (req, res, next) {
 */
 function res_bad_request (req, res, next) {
     res.bad_request = function (str) {
-        send_error(res.status(400), str || "Bad request");
+        res.status(400).error(str || "Bad request");
     };
     next();
 }
 
-/**
-  Send a error message through a res object using JSON
-*/
-function send_error (res, message_or_error) {
-    if (typeof message_or_error === "string") {
-        return res.json({error: message_or_error});
-    }
-    console.error(message_or_error.stack);
-    return send_error(res.status(500), "Internal error");
-}
-
 function notify_client (res, err) {
     if (err) {
-        return send_error(res, err);
+        throw err;
     }
     res.json({success: true});
 }
