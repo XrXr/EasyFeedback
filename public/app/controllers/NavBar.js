@@ -24,7 +24,7 @@ controller("NavBar", function ($scope, ngDialog, LoginManager, $rootScope) {
         });
     };
 }).
-controller("UserMenu", function ($scope, SessionManager) {
+controller("UserMenu", function ($scope, SessionManager, $http, $window) {
     $scope.showing = false;
     $scope.manager = SessionManager;
     $scope.status = "read_only";
@@ -55,6 +55,12 @@ controller("UserMenu", function ($scope, SessionManager) {
         }, function () {
             $scope.status = "edit_failed";
         });
+    };
+    $scope.log_out = function () {
+        $http.post("/logout").then(refresh_page, refresh_page);
+        function refresh_page () {
+            $window.location.reload();
+        }
     };
     $scope.close = function () {
         $scope.showing = false;

@@ -235,6 +235,15 @@ router.post("/login", function (req, res) {
     }
 });
 
+router.post("/logout", function (req, res) {
+    req.session.destroy(function (err) {
+        if (err) {
+            throw err;
+        }
+        end_request(res);
+    });
+});
+
 router.post("/register", function (req, res) {
     var username = req.body.username;
     var password = req.body.password;
