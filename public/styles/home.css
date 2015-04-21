@@ -213,3 +213,6 @@
     text-align: center;
     color: darkred;
 }
+.login-modal .center-block{
+    width: 192px
+}

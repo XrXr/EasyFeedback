@@ -14,6 +14,7 @@ angular.module("easyFeedback")
     $scope.login = function () {
         ngDialog.open({
             template: "app/partials/login.html",
+            className: "ngdialog-theme-default login-modal",
             controller: "Login"
         });
     };
