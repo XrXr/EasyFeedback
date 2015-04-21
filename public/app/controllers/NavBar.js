@@ -55,7 +55,8 @@ controller("UserMenu", function ($scope) {
     $scope.close = function () {
         $scope.showing = false;
     };
-    $scope.close_on_escape = {
-        "Escape" : $scope.close
-    };
+    $scope.$on("escape_pressed", function () {
+        $scope.close();
+        $scope.$apply();
+    });
 });

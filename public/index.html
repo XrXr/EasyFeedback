@@ -18,7 +18,7 @@
 <body ng-app="easyFeedback">
   <span ng-controller="UserMenu">
     <div class="back-drop" ng-if="showing" ng-click="close()"></div>
-    <ul keydown="close_on_escape" class="user-dropdown-menu" ng-if="showing" role="menu">
+    <ul class="user-dropdown-menu" ng-if="showing" role="menu">
       <li class="dropdown-entry">Session name:
         <form ng-submit="send_new_name()" class="input-container">
           <input type="text" focus-input="status === 'editing'" placeholder="Unnamed session" ng-disabled="status !== 'editing'" ng-model="session_name" ng-model-options="{ getterSetter: true }" maxlength=25></input>
