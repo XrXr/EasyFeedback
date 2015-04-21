@@ -9,13 +9,13 @@ factory("LoginManager", function ($http, $q, SessionManager) {
             return logged_in_user;
         },
         /*
-            Attempt to log in
-            @return {promise} Resolves to object with a boolean success field.
-            The field will be true if the log in attempt was successful. There
-            will be an additional field -- reason if the log in faild. The
-            reason field contains a message about why the log in failed. If the
-            server responds with data that doesn't fit this format, the promise
-            will reject.
+          Attempt to log in
+          @return {promise} Resolves to object with a boolean success field.
+          The field will be true if the log in attempt was successful. There
+          will be an additional field -- reason if the log in faild. The
+          reason field contains a message about why the log in failed. If the
+          server responds with data that doesn't fit this format, the promise
+          will reject.
         */
         login: function (username, password) {
             return $http.post("/login", {

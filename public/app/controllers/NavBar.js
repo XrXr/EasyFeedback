@@ -24,15 +24,18 @@ controller("NavBar", function ($scope, ngDialog, LoginManager, $rootScope) {
         });
     };
 }).
-controller("UserMenu", function ($scope) {
+controller("UserMenu", function ($scope, SessionManager) {
     $scope.showing = false;
+    $scope.manager = SessionManager;
     $scope.status = "read_only";
     var session_name = "";
     $scope.$on("show_user_menu", function () {
         if ($scope.status !== "loading") {
             $scope.status = "read_only";
+            try {
+                session_name = SessionManager.get_session_name();
+            } catch(_) {}
         }
-        // get current session name here
         $scope.showing = true;
     });
     $scope.edit_name = function () {
@@ -44,13 +47,14 @@ controller("UserMenu", function ($scope) {
         }
         return session_name;
     };
-    $scope.send_new_name = function () {
+    $scope.send_new_name = function (new_name) {
         $scope.status = "loading";
         // TODO: contact server
-        setTimeout(function() {
-            $scope.status="done";
-            $scope.$apply();
-        }, 1000);
+        SessionManager.rename_session(new_name).then(function () {
+            $scope.status = "edit_success";
+        }, function () {
+            $scope.status = "edit_failed";
+        });
     };
     $scope.close = function () {
         $scope.showing = false;

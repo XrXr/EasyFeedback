@@ -47,8 +47,12 @@ factory("SessionManager", function ($http, GradingSessionIdInterceptor) {
           @return {promise} resolves to a boolean indicating whether the change
             was successful
         */
-        rename_session: function () {
-
+        rename_session: function (new_name) {
+            return $http.put("/rename_session", {
+                new_name: new_name
+            }).success(function () {
+                raw_session_obj.name = new_name;
+            });
         },
         get_current: function () {
             return students[current_index];
@@ -68,6 +72,10 @@ factory("SessionManager", function ($http, GradingSessionIdInterceptor) {
         },
         get_session_name: function () {
             return raw_session_obj.name;
+        },
+        // whether there is a session right now
+        has_session: function () {
+            return !!raw_session_obj;
         },
         get students () {
             return students;

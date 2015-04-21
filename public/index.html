@@ -19,13 +19,14 @@
   <span ng-controller="UserMenu">
     <div class="back-drop" ng-if="showing" ng-click="close()"></div>
     <ul class="user-dropdown-menu" ng-if="showing" role="menu">
-      <li class="dropdown-entry">Session name:
-        <form ng-submit="send_new_name()" class="input-container">
+      <li class="dropdown-entry" ng-if="manager.has_session()">Session name:
+        <form ng-submit="send_new_name(session_name())" class="input-container">
           <input type="text" focus-input="status === 'editing'" placeholder="Unnamed session" ng-disabled="status !== 'editing'" ng-model="session_name" ng-model-options="{ getterSetter: true }" maxlength=25></input>
           <span ng-switch on="status">
             <i ng-switch-when="read_only" ng-click="edit_name()" class="fa fa-pencil clickable"></i>
             <div ng-switch-when="loading" class="spinner"></div>
-            <i ng-switch-when="done" class="fa fa-check"></i>
+            <i ng-switch-when="edit_success" class="fa fa-check"></i>
+            <i ng-switch-when="edit_failed" class="fa fa-exclamation"></i>
           </span>
           <input class="hidden-submit" type="submit"></input>
         <form>

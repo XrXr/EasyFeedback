@@ -17,10 +17,12 @@ var is_object = require("is-object");
 var storage;
 var is_login;
 
+router.use(res_bad_request);
+
 router.post("/upload_worksheet", function (req, res, next) {
     var form = new multiparty.Form();
     form.on("error", function(err) {
-        send_error(res, "Bad file");
+        return send_error(res, "Bad file");
     });
     form.on("file", function(name, val) {
         var tmp_file_path = val.path;
@@ -104,6 +106,7 @@ router.get("/get_status", retrieve_grading_session, function (req, res) {
     }
     return res.json({
         id: sess.id,
+        name: sess.name,
         student_list: sess.student_list,
         last_index: sess.last_index
     });
@@ -120,12 +123,11 @@ router.get("/login_status", function (req, res) {
     res.json(status);
 });
 
-
-router.put("/change_current_template", validate_request);
+router.put("/change_current_template", has_grading_session_id);
 router.put("/change_current_template", function (req, res, next) {
     var new_template = req.body.new_template;
     if (!new_template || typeof new_template !== "string") {
-        return send_error(res, "Bad request");
+        return res.bad_request();
     }
     next();
 }, retrieve_grading_session, function (req, res, next) {
@@ -149,7 +151,7 @@ router.get("/get_current_template", function (req, res) {
     });
 });
 
-router.post("/new_feedback", validate_request, retrieve_grading_session);
+router.post("/new_feedback", has_grading_session_id, retrieve_grading_session);
 router.post("/new_feedback", function (req, res, next) {
     var student = req.body.student;
     var index = req.body.student_index;
@@ -171,7 +173,7 @@ router.post("/new_feedback", function (req, res, next) {
     next();
 }, commit_grading_session, end_request_m);
 
-router.get("/render_worksheet", validate_request);
+router.get("/render_worksheet", has_grading_session_id);
 router.get("/render_worksheet", retrieve_grading_session, function (req, res) {
     var sess = req.easy_feedback.grading_session;
     var csv = sess.csv;
@@ -239,13 +241,32 @@ router.post("/register", function (req, res) {
     });
 });
 
+// even though this route can only be used by logged in user, it's not
+// put under the user router since this isn't a user related operation
+router.put("/rename_session", function (req, res, next) {
+    var new_name = req.body.new_name;
+    if (!new_name || typeof new_name !== "string") {
+        return res.bad_request();
+    }
+    if (new_name.length > 25) {
+        return res.bad_request("Max session name length is 25");
+    }
+    next();
+}, authenticated_only, has_grading_session_id, retrieve_grading_session,
+function (req, res, next) {
+    var grading_session = req.easy_feedback.grading_session;
+    grading_session.name = req.body.new_name;
+    next();
+}, commit_grading_session, end_request_m);
+
 // routes in user_router are only for logged in users
 user_router.use(authenticated_only);
+user_router.use(res_bad_request);
 
 user_router.post("/new_template_entry", function (req, res, next) {
     var new_entry = req.body.new_entry;
     if (!new_entry || typeof(new_entry) !== "object") {
-        return send_error(res, "Bad request");
+        return res.bad_request();
     }
     if (!new_entry.hasOwnProperty("title") ||
         !new_entry.hasOwnProperty("text")) {
@@ -266,7 +287,7 @@ user_router.post("/new_template_entry", function (req, res, next) {
 user_router.post("/new_prefered_template", function (req, res, next) {
     var new_prefered = req.body.new_prefered;
     if (!isNumber(new_prefered)) {
-        return send_error(res, "Bad request");
+        return res.bad_request();
     }
     next();
 }, retrieve_user_data, function (req, _, next) {
@@ -299,13 +320,12 @@ user_router.get("/dashboard", function (req, res, next) {
 router.use("/user", user_router);
 
 /*
-  For logged in users, their request to some routes must contain a query string
-  that has an id field. This middleware will send an error to the client if
-  this requirement is not met, and calls the next middleware otherwise
+  Turn back requsts from logged in users that don't include a session id in
+  the url query string.
 */
-function validate_request (req, res, next) {
+function has_grading_session_id (req, res, next) {
     if (is_login(req.session) && !is_good_id(req.query.id)) {
-        return send_error(res, "Bad request");
+        return res.bad_request("Missing grading session id");
     }
     next();
 }
@@ -380,9 +400,11 @@ function retrieve_user_data (req, res, next) {
     });
 }
 
-// if a valid id is in req.query.id is present, or user is not logged in,
-// call next middleware, else retrieve the active session id for the logged in
-// user and put that in req.query.id.
+/*
+  if a valid id is in req.query.id is present, or user is not logged in,
+  call next middleware, else retrieve the active session id for the logged in
+  user and put that in req.query.id.
+*/
 function ensure_grading_session_id (req, res, next) {
     if (is_login(req.session) && !is_good_id(req.query.id)) {
         return retrieve_user_data(req, res, function () {
@@ -406,6 +428,16 @@ function commit_user_data (req, res, next) {
         }
         next();
     });
+}
+
+/*
+  Add a method to res called bad_request
+*/
+function res_bad_request (req, res, next) {
+    res.bad_request = function (str) {
+        send_error(res.status(400), str || "Bad request");
+    };
+    next();
 }
 
 /**
