@@ -65,7 +65,8 @@ angular.module("easyFeedback")
         });
     }
 })
-.controller("WorksheetUpload", function ($scope, $upload, $rootScope) {
+.controller("WorksheetUpload", function ($scope, $upload,
+                                         GradingSessionIdInterceptor) {
     $scope.text = "Drag and drop worksheet here or click to select file";
     $scope.upload_mode = false;
     $scope.current_status = "Uploading worksheet...";
@@ -89,7 +90,8 @@ angular.module("easyFeedback")
             file: upload
         }).progress(function (evt) {
             $scope.upload_percentage(100.0 * evt.loaded / evt.total);
-        }).success(function () {
+        }).success(function (res) {
+            GradingSessionIdInterceptor.set_grading_session_id(res.id);
             $scope.closeThisDialog();
         });  //TODO: handle error
         $scope.upload_mode = true;

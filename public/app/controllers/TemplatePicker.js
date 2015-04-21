@@ -1,6 +1,8 @@
 angular.module("easyFeedback").
 controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
-                                       $http, $rootScope, LoginManager) {
+                                       $http, $rootScope, LoginManager,
+                                       $window) {
+    $scope.template_entries = [];
     $scope.adding_template = false;
     $scope.loading = true;
     $scope.template_title_invalid = false;
@@ -10,7 +12,7 @@ controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
 
     $scope.on_editor = function (editor) {
         var session = editor.getSession();
-        var current_selected = null;
+        var current_selected;
         var logged_in = !!LoginManager.get_logged_in_user();
         editor.setReadOnly(logged_in);
 
@@ -64,21 +66,31 @@ controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
             $scope.loading = true;
             $scope.template_title_invalid = false;
             editor.setReadOnly(true);
-            $http.put("/new_template", {
+            $http.post("/user/new_template", {
                 new_template: new_template
             }).success(function () {
-                $scope.templates.push(new_template);
+                $scope.template_entries.push(new_template);
                 $scope.loading = false;
                 $scope.cancel_adding();
             });
         };
 
         $scope.template_selected = function (i) {
-            var raw_template = $scope.templates[i].text;
+            // nothing is selected on start up if the current template is not
+            // in the list. see show_templates
+            if (angular.isUndefined(current_selected)) {
+                if (!$window.confirm(
+                    "The template in use for this session is not in the " +
+                    "list. Selecting a different template would discard the " +
+                    "current template permanenetly. Are you sure?")) {
+                    return;
+                }
+            }
+            var raw_template = $scope.template_entries[i].text;
             current_selected = i;
             render_template(raw_template);
             $rootScope.$emit("reset_editor");
-            // fire and forget
+            // TODO: this is fire and forget, maybe add spinner?
             TemplateManager.update_current(raw_template);
             TemplateManager.update_prefered(i);
         };
@@ -101,11 +113,23 @@ controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
             $scope.$broadcast("mainEditorChange", parsed.text);
         }
 
-        function show_templates (templates) {
+        function show_templates (template_entries) {
             $scope.loading = false;
-            $scope.templates = templates.list;
-            current_selected = templates.current;
-            render_template(templates.list[templates.current].text);
+            $scope.template_entries = template_entries;
+            var template_in_use = TemplateManager.get_parsed_current();
+
+            var should_select;
+            for (var i = 0; i < template_entries.length; i++) {
+                if (template_entries[i].text === template_in_use.raw) {
+                    should_select = i;
+                    break;
+                }
+            }
+            // the current template in use is in the list
+            if (angular.isDefined(should_select)) {
+                current_selected = should_select;
+            }
+            render_template(template_in_use.text);
         }
     };
 });

@@ -82,7 +82,7 @@ angular.module("easyFeedback")
      *   }
      */
     function fetch_all () {
-        return $http.get("/get_all_templates").then(function (response) {
+        return $http.get("/user/all_templates").then(function (response) {
             return response.data.template_list;
         });
     }

@@ -6,7 +6,6 @@
 */
 var uuid = require("uuid");
 var readConfig = require("./configReader").readConfig;
-var is_object = require("is-object");
 var utils = require("../easyfeedback/utils");
 var predefined_templates = utils.predefined_templates;
 
@@ -139,7 +138,7 @@ function make_user_data_gates (backing) {
 function is_login (session) {
     var user = session._user;
     return typeof user === "object" && typeof user.username === "string" &&
-           user.username.length > 0 && is_object(user.data);
+           user.username.length > 0;
 }
 
 /*

@@ -33,6 +33,17 @@ factory("LoginManager", function ($http, $q) {
                 return res;
             });
         },
+        /*
+           Query the server about the current log in status and update the
+           local status according to that
+        */
+        synchronize_login_status: function () {
+            $http.get("/login_status").success(function (status) {
+                if (status.logged_in) {
+                    logged_in_user = status.username;
+                }
+            });
+        },
         register: function (username, password) {
             return $http.post("/register", {
                 username: username,

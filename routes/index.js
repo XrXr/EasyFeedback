@@ -17,13 +17,6 @@ var is_object = require("is-object");
 var storage;
 var is_login;
 
-// requests from logged in user to these routes need special care. See
-// validate_request
-router.put("/change_current_template", validate_request);
-router.get("/get_current_template", validate_request);
-router.post("/new_feedback", validate_request);
-router.get("/render_worksheet", validate_request);
-
 router.post("/upload_worksheet", function (req, res, next) {
     var form = new multiparty.Form();
     form.on("error", function(err) {
@@ -73,29 +66,41 @@ router.post("/upload_worksheet", function (req, res, next) {
     // insert the correct template into the session
     function save_grading_session (grading_session) {
         if (is_login(req.session)) {
-            req.easy_feedback._new_session = grading_session;
+            req.easy_feedback = {  // so we can use in the next middleware
+                _new_session: grading_session
+            };
             return next();
         }
-        grading_session.template = predefined_templates()[0];
+        grading_session.template = predefined_templates()[0].text;
         storage.temp_commit(req.session, grading_session,
                             notify_client.bind(null, res));
     }
-}, retrieve_user_data, function (req, res) {
+}, retrieve_user_data, function (req, res, next) {
     var grading_session = req.easy_feedback._new_session;
     var user_data = req.easy_feedback.user_data;
-    var current_template = user_data.current_template;
-    var template = user_data.template_list[current_template];
-
+    var prefered_template = user_data.prefered_template;
+    var template_entry = user_data.template_list[prefered_template];
+    grading_session.template = template_entry.text;
     storage.user.create_new_session(req.session, grading_session,
-                                    notify_client.bind(null, res));
+                                    set_active_session);
+
+    function set_active_session (err, id) {
+        if (err) {
+            return send_error(res, err);
+        }
+        req.easy_feedback.new_session_id = id;
+        next();
+    }
+}, retrieve_user_data, function (req, _, next) {
+    var user_data = req.easy_feedback.user_data;
+    user_data.active_session = req.easy_feedback.new_session_id;
+    next();
+}, commit_user_data, function (req, res) {
+    res.json({success: true, id: req.easy_feedback.new_session_id});
 });
 
-router.get("/get_status", function (req, res, next) {
-    if (is_login(req.session) && !is_good_id(req.query.id)) {
-        req.query.id = storage.user.get_active_grading_sess(req.session);
-    }
-    next();
-}, retrieve_grading_session, function (req, res) {
+router.get("/get_status", ensure_grading_session_id);
+router.get("/get_status", retrieve_grading_session, function (req, res) {
     var sess = req.easy_feedback.grading_session;
     if (!is_in_progress(sess)) {
         return send_error(res, "No worksheet uploaded");
@@ -107,6 +112,19 @@ router.get("/get_status", function (req, res, next) {
     });
 });
 
+router.get("/login_status", function (req, res) {
+    var status = {
+        logged_in: false
+    };
+    if (storage.is_login(req.session)) {
+        status.logged_in = true;
+        status.username = storage.get_username(req.session);
+    }
+    res.json(status);
+});
+
+
+router.put("/change_current_template", validate_request);
 router.put("/change_current_template", function (req, res, next) {
     var new_template = req.body.new_template;
     if (!new_template || typeof new_template !== "string") {
@@ -119,7 +137,8 @@ router.put("/change_current_template", function (req, res, next) {
     next();
 }, commit_grading_session, end_request_m);
 
-router.get("/get_current_template", retrieve_grading_session);
+router.get("/get_current_template", ensure_grading_session_id,
+                                    retrieve_grading_session);
 router.get("/get_current_template", function (req, res) {
     // a session not in progress is given a predefined template
     var sess = req.easy_feedback.grading_session;
@@ -133,7 +152,7 @@ router.get("/get_current_template", function (req, res) {
     });
 });
 
-router.post("/new_feedback", retrieve_grading_session);
+router.post("/new_feedback", validate_request, retrieve_grading_session);
 router.post("/new_feedback", function (req, res, next) {
     var student = req.body.student;
     var index = req.body.student_index;
@@ -155,6 +174,7 @@ router.post("/new_feedback", function (req, res, next) {
     next();
 }, commit_grading_session, end_request_m);
 
+router.get("/render_worksheet", validate_request);
 router.get("/render_worksheet", retrieve_grading_session, function (req, res) {
     var sess = req.easy_feedback.grading_session;
     var csv = sess.csv;
@@ -187,6 +207,7 @@ router.post("/login", function (req, res) {
         storage.temp_retrieve(req.session, function (err, grading_session) {
             // transfer the current grading session to the user if it is in
             // progress i.e the user uploaded a worksheet
+            console.log(grading_session.template)
             if (is_in_progress(grading_session)) {
                 storage.user.create_new_session(req.session, grading_session,
                                                 change_active_session);
@@ -205,6 +226,7 @@ router.post("/login", function (req, res) {
                 return send_error(res, err);
             }
             user_data.active_session = new_session_id;
+            res.json({success: true});
         });
     }
 });
@@ -223,7 +245,7 @@ router.post("/register", function (req, res) {
 // routes in user_router are only for logged in users
 user_router.use(authenticated_only);
 
-user_router.put("/add_template", function (req, res) {
+user_router.post("/add_template", function (req, res) {
     var new_template = req.body.new_template;
     if (!new_template || typeof(new_template) !== "object") {
         return send_error(res, "Bad request");
@@ -252,7 +274,11 @@ user_router.post("/new_prefered_template", function (req, res, next) {
 }, commit_user_data, end_request_m);
 
 user_router.get("/all_templates", retrieve_user_data, function (req, res) {
-    res.json({templates: req.easy_feedback.user_data.template_list});
+    var user_data = req.easy_feedback.user_data;
+    res.json({
+        template_list: user_data.template_list,
+        prefered: user_data.prefered_template
+    });
 });
 
 user_router.get("/dashboard", function (req, res, next) {
@@ -350,6 +376,19 @@ function retrieve_user_data (req, res, next) {
         req.easy_feedback.user_data = data;
         next();
     });
+}
+
+// if a valid id is in req.query.id is present, or user is not logged in,
+// call next middleware, else retrieve the active session id for the logged in
+// user and put that in req.query.id.
+function ensure_grading_session_id (req, res, next) {
+    if (is_login(req.session) && !is_good_id(req.query.id)) {
+        return retrieve_user_data(req, res, function () {
+            req.query.id = req.easy_feedback.user_data.active_session;
+            next();
+        });
+    }
+    next();
 }
 
 /*

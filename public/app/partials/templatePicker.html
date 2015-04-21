@@ -8,7 +8,7 @@
       <div class="template-result-container">
         <table class="table table-hover">
           <tbody>
-            <tr class="clickable" ng-repeat="t in templates track by $index" ng-click="template_selected($index)" ng-class="is_current($index) ? 'success' : ''">
+            <tr class="clickable" ng-repeat="t in template_entries track by $index" ng-click="template_selected($index)" ng-class="is_current($index) ? 'success' : ''">
               <td><b>{{t.title}}</b></td>
             </tr>
         </table>
