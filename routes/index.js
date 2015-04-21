@@ -75,8 +75,12 @@ router.post("/upload_worksheet", function (req, res, next) {
             return next();
         }
         grading_session.template = predefined_templates()[0].text;
-        storage.temp_commit(req.session, grading_session,
-                            notify_client.bind(null, res));
+        storage.temp_commit(req.session, grading_session, function (err) {
+            if (err) {
+                throw err;
+            }
+            end_request(res.status(201));
+        });
     }
 }, retrieve_user_data, function (req, res, next) {
     var grading_session = req.easy_feedback._new_session;
@@ -96,7 +100,7 @@ router.post("/upload_worksheet", function (req, res, next) {
         next();
     }
 }, commit_user_data, function (req, res) {
-    res.json({success: true, id: req.easy_feedback.new_session_id});
+    end_request(res.status(201));
 });
 
 router.get("/get_status", ensure_grading_session_id);
@@ -451,13 +455,6 @@ function res_bad_request (req, res, next) {
         res.status(400).error(str || "Bad request");
     };
     next();
-}
-
-function notify_client (res, err) {
-    if (err) {
-        throw err;
-    }
-    res.json({success: true});
 }
 
 // from StackOverflow 18082
