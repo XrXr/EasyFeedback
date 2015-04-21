@@ -16,7 +16,7 @@ angular.module("easyFeedback")
         return "/render_worksheet" + (id ? "?id=" + id : "");
     };
 
-    // TODO: add warning about imported csv don't have tab jumps
+    // TODO: add warning about imported filled csv don't have tab jumps
     $scope.view_feedback = function (student_index) {
         var student = SessionManager.students[student_index];
         SessionManager.current_index = student_index;

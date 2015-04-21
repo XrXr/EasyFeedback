@@ -1,7 +1,7 @@
 // Keep track of login status and provide interface for logging in, out and
 // registeration
 angular.module("easyFeedback").
-factory("LoginManager", function ($http, $q) {
+factory("LoginManager", function ($http, $q, SessionManager) {
     var logged_in_user;
     return {
         // return undefined if user is not logged in
@@ -22,15 +22,22 @@ factory("LoginManager", function ($http, $q) {
                 username: username,
                 password: password,
             }).then(function (res) {
-                res = res.data;
-                var success = res.success;
+                var data = res.data;
+                var success = data.success;
                 if (typeof success !== "boolean") {
                     return $q.reject(Error("Bad response"));
                 }
                 if (success) {
                     logged_in_user = username;
+                    // After a sucessfully log in, fetch current session again,
+                    // For when a temporary session is transfered to a logged
+                    // in user
+                    return SessionManager.fetch_current_session().
+                        then(function () {
+                            return data;
+                        });
                 }
-                return res;
+                return data;
             });
         },
         /*
