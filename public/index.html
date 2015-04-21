@@ -7,19 +7,40 @@
   <link href="styles/ngDialog.css" rel="stylesheet" />
   <link href="styles/ngDialog-theme-default.css" rel="stylesheet" />
   <link href='//fonts.googleapis.com/css?family=Roboto+Condensed' rel='stylesheet' type='text/css' />
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   <link href="styles/loader.css" rel="stylesheet" />
   <link href="styles/home.css" rel="stylesheet" />
   <script src="//cdn.jsdelivr.net/marked/0.3.1/marked.min.js" type="text/javascript" charset="utf-8"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/xregexp/2.0.0/xregexp-min.js"></script>
-  <!-- <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script> -->
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.13/angular.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.13/angular-animate.js"></script>
 </head>
 <body ng-app="easyFeedback">
+  <span ng-controller="UserMenu">
+    <div class="back-drop" ng-if="showing" ng-click="close()"></div>
+    <ul keydown="close_on_escape" class="user-dropdown-menu" ng-if="showing" role="menu">
+      <li class="dropdown-entry">Session name:
+        <form ng-submit="send_new_name()" class="input-container">
+          <input type="text" focus-input="status === 'editing'" placeholder="Unnamed session" ng-disabled="status !== 'editing'" ng-model="session_name" ng-model-options="{ getterSetter: true }" maxlength=25></input>
+          <span ng-switch on="status">
+            <i ng-switch-when="read_only" ng-click="edit_name()" class="fa fa-pencil clickable"></i>
+            <div ng-switch-when="loading" class="spinner"></div>
+            <i ng-switch-when="done" class="fa fa-check"></i>
+          </span>
+          <input class="hidden-submit" type="submit"></input>
+        <form>
+      </li>
+      <li class="dropdown-entry clickable">Marking sessions...</li>
+      <li class="dropdown-entry clickable">Log out</li>
+    </ul>
+  </span>
   <div class="nav-bar" ng-controller="NavBar">
     <div class="logo vertical-center">Easy Feedback</div>
     <div class="button-box">
       <div class="clickable" ng-click="template_picker()">Templates</div>
       <div class="clickable">Hotkeys</div>
-      <div class="clickable" ng-click="login()">Log in</div>
+      <div class="clickable" ng-if="!lm.get_logged_in_user()" ng-click="login()">Log in</div>
+      <div class="clickable" ng-if="lm.get_logged_in_user()" ng-bind="lm.get_logged_in_user()" ng-click="show_user_menu()"></div>
     </div>
   </div>
   <editor class="editor block" keydown="hotkeys" ng-controller="MainEditor" callback="on_editor"></editor>
@@ -29,7 +50,6 @@
     <ng-include src="'app/partials/statusPanel.html'" ng-controller="StatusPanel"></ng-include>
   </div>
 
-  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.13/angular.js"></script>
   <script src="app/app.js"></script>
   <script src="app/libs/ngDialog.js"></script>
   <script src="app/libs/angular-file-upload.js"></script>
@@ -37,6 +57,7 @@
   <script src="app/directives/keydown.js"></script>
   <script src="app/directives/preview.js"></script>
   <script src="app/directives/selectBox.js"></script>
+  <script src="app/directives/focusInput.js"></script>
   <script src="app/controllers/MainEditor.js"></script>
   <script src="app/controllers/NoteEditor.js"></script>
   <script src="app/controllers/StatusPanel.js"></script>

@@ -114,8 +114,8 @@ controller("TemplatePicker", function ($scope, $timeout, TemplateManager,
         }
 
         function show_templates (template_entries) {
-            $scope.loading = false;
             $scope.template_entries = template_entries;
+            $scope.loading = false;
             var template_in_use = TemplateManager.get_parsed_current();
 
             var should_select;

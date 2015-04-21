@@ -21,6 +21,7 @@ angular.module("easyFeedback")
             }
             if (Object.hasOwnProperty.call(callbacks, key)) {
                 callbacks[key]();
+                scope.$apply();
                 ev.preventDefault();
                 ev.stopPropagation();
             }

@@ -81,19 +81,16 @@
 .template-result-block {
     width: 22%;
 }
-.template-result-block .top-container {
+.input-container {
     display: flex;
     align-content: space-between;
 }
-.template-result-block .top-container input {
+.template-result-block .input-container input {
     width: 75%;
 }
-.template-result-block .top-container .spinner {
+.template-result-block .input-container .spinner {
     position: relative;
-    left: 17px;
     transform: scale(0.16);
-    top: -4px;
-    margin: 0;
 }
 .template-input {
     width: 80%;
@@ -201,7 +198,6 @@
     transform: scale(0.4);
     left: 65px;
     bottom: 140px;
-    margin: 0;
 }
 .change-template-info {
     top: 17%;
@@ -215,4 +211,74 @@
 }
 .login-modal .center-block{
     width: 192px
+}
+.user-dropdown-menu {
+    list-style: outside none none;
+    position: fixed;
+    font-size: 20px;
+    top: 50px;
+    right: 16px;
+    border-radius: 3px;
+    width: 288px;
+    background-color: #1E1D1D;
+    color: #ADADAD;
+    padding: 10px;
+    z-index: 200;
+}
+.dropdown-entry {
+    border-bottom: 1px solid #4F535B;
+}
+.dropdown-entry input {
+    color: white;
+    font-style: italic;
+    background-color: #1E1D1D;
+    border: none;
+    border-color: transparent;
+    font-family: "Times New Roman", Georgia, Serif;
+    font-size: 18px;
+    width: 93%;
+}
+.dropdown-entry .spinner {
+    position: relative;
+    top: -2px;
+    transform: scale(0.13);
+}
+.back-drop {
+    position: fixed;
+    background-color: black;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    opacity: 0.7;
+}
+.back-drop.ng-enter, .back-drop.ng-leave {
+    -webkit-transition:opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s;
+    transition:opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s;
+}
+.back-drop.ng-enter,
+.back-drop.ng-leave.ng-leave-active {
+    opacity:0;
+}
+.back-drop.ng-leave,
+.back-drop.ng-enter.ng-enter-active {
+    opacity: 0.7;
+}
+.user-dropdown-menu .clickable:hover {
+    color: #D8D8D8;
+}
+.hidden-submit {
+    position: absolute;
+    right: -9999px;
+}
+.dropdown-entry > .input-container {
+    height: 34px;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+.dropdown-entry .input-container .fa {
+    top: 9px;
+    position: relative;
+}
+.spinner {
+    margin: 0;
 }
