@@ -88,13 +88,10 @@ router.post("/upload_worksheet", function (req, res, next) {
         if (err) {
             return send_error(res, err);
         }
+        user_data.active_session = id;
         req.easy_feedback.new_session_id = id;
         next();
     }
-}, retrieve_user_data, function (req, _, next) {
-    var user_data = req.easy_feedback.user_data;
-    user_data.active_session = req.easy_feedback.new_session_id;
-    next();
 }, commit_user_data, function (req, res) {
     res.json({success: true, id: req.easy_feedback.new_session_id});
 });

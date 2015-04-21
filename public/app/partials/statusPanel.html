@@ -1,5 +1,5 @@
 <button type="button" ng-if="error_message" ng-click="upload_modal()" class="btn btn-primary margin-right">Upload Worksheet</button>
-<button type="button" ng-if="!error_message" ng-disabled="error_message" ng-click="render_worksheet()" class="btn btn-success margin-right">Download Results</button>
+<a ng-href="{{render_worksheet_url()}}" ng-if="!error_message" ng-disabled="error_message" class="btn btn-success margin-right">Download Results</a>
 <button type="button" ng-if="!error_message" ng-click="commit_and_advance()" class="btn btn-primary margin-right">Commit and Grade Next</button>
 <button type="button" ng-if="!error_message" ng-disabled="error_message" ng-click="commit_feedback()" class="btn btn-primary margin-right">Commit Feedback</button>
 <button type="button" ng-click="reset_editor()" class="btn btn-warning">Reset</button>

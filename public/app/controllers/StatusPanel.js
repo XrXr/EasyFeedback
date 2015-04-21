@@ -1,8 +1,7 @@
 angular.module("easyFeedback")
-.controller("StatusPanel", function ($scope, ngDialog, $http,
-                                     FeedbackStorage, $rootScope,
-                                     GradingSessionIdInterceptor) {
-    $scope.storage = FeedbackStorage;
+.controller("StatusPanel", function ($scope, ngDialog, SessionManager,
+                                     $rootScope) {
+    $scope.storage = SessionManager;
     $scope.skipped_students = [];
 
     $scope.upload_modal = function () {
@@ -12,18 +11,15 @@ angular.module("easyFeedback")
         }).closePromise.then(update_data);
     };
 
-    $scope.render_worksheet = function () {
-        var link = document.createElement('a');
-        link.href = '/render_worksheet';
-        var e = document.createEvent('MouseEvents');
-        e.initEvent('click', true, true);
-        link.dispatchEvent(e);
+    $scope.render_worksheet_url = function () {
+        var id = SessionManager.get_session_id();
+        return "/render_worksheet" + (id ? "?id=" + id : "");
     };
 
     // TODO: add warning about imported csv don't have tab jumps
     $scope.view_feedback = function (student_index) {
-        var student = FeedbackStorage.students[student_index];
-        FeedbackStorage.current_index = student_index;
+        var student = SessionManager.students[student_index];
+        SessionManager.current_index = student_index;
         $rootScope.$emit("view_feedback", student);
     };
 
@@ -31,7 +27,7 @@ angular.module("easyFeedback")
         if (student.not_submitted) {
             return "Not Submitted";
         }
-        if (FeedbackStorage.is_graded(student)) {
+        if (SessionManager.is_graded(student)) {
             return "Graded";
         }
         return "Needs Grading";
@@ -50,17 +46,15 @@ angular.module("easyFeedback")
     update_data();
     function update_data () {
         //  TODO: add loading spinner
-        $http.get("/get_status").success(function(data, status) {
+        SessionManager.fetch_current_session().then(function(data) {
             $scope.error_message = "";
             if (data.error) {
                 $scope.error_message = data.error;
                 return;
             }
-            GradingSessionIdInterceptor.set_grading_session_id(data.id);
-            FeedbackStorage.update_data(data.student_list, data.last_index);
-            $scope.view_feedback(FeedbackStorage.current_index);
-        }).error(function (data) {
-            console.log(data)
+            $scope.view_feedback(SessionManager.current_index);
+        }, function (res) {
+            console.error(res);
             $scope.error_message = "An internal error has occoured";
         });
     }
@@ -91,7 +85,6 @@ angular.module("easyFeedback")
         }).progress(function (evt) {
             $scope.upload_percentage(100.0 * evt.loaded / evt.total);
         }).success(function (res) {
-            GradingSessionIdInterceptor.set_grading_session_id(res.id);
             $scope.closeThisDialog();
         });  //TODO: handle error
         $scope.upload_mode = true;

@@ -1,30 +1,23 @@
+// Store and manage grading session info. The core of the application
 angular.module("easyFeedback").
-factory("FeedbackStorage", function ($http) {
+factory("SessionManager", function ($http, GradingSessionIdInterceptor) {
     var total_submitted = 0;
     var total_graded = 0;
     var current_index = 0;
     var students = [];
+    var raw_session_obj;  // the raw response from the server
     return {
-        update_data: function (new_data, new_index) {
-            students = new_data;
-            current_index = 0;
-            if (angular.isDefined(new_index) && new_index >= 0 &&
-                new_index < new_data.length) {
-                current_index = new_index;
-            }
-            total_graded = 0;
-            total_submitted = 0;
-            for (var i = 0; i < students.length; i++) {
-                var current_student = students[i];
-                if (current_student.not_submitted) {
-                    continue;
+        fetch_current_session: function () {
+            return $http.get("/get_status").then(function (res) {
+                var data = res.data;
+                if (data.error) {
+                    return data;
                 }
-                if (is_graded(current_student)) {
-                    total_graded++;
-                }
-                total_submitted++;
-            }
-            return skip_until_valid();
+                raw_session_obj = data;
+                GradingSessionIdInterceptor.set_grading_session_id(data.id);
+                update_stored_session(data.student_list, data.last_index);
+                return data;
+            });
         },
         /**
           Advance the current student index and send feedback to the server
@@ -46,6 +39,17 @@ factory("FeedbackStorage", function ($http) {
             update_feedback(feedback, grade, anchors);
             post_feedback(current_index, current_index);
         },
+        /**
+          Attempt to rename the by sending a request to the server. The locally
+          stored session name will be changed if the server acknowledges the
+          change
+          @param {string} new_name - the name to rename the current session to
+          @return {promise} resolves to a boolean indicating whether the change
+            was successful
+        */
+        rename_session: function () {
+
+        },
         get_current: function () {
             return students[current_index];
         },
@@ -58,6 +62,13 @@ factory("FeedbackStorage", function ($http) {
         get_total_submitted: function () {
             return total_submitted;
         },
+        get_session_id: function () {
+            // sometimes this is called before any fetching
+            return raw_session_obj ? raw_session_obj.id : "";
+        },
+        get_session_name: function () {
+            return raw_session_obj.name;
+        },
         get students () {
             return students;
         },
@@ -69,6 +80,29 @@ factory("FeedbackStorage", function ($http) {
         },
         is_graded: is_graded
     };
+
+    // Replace the currently stored grading session with a new one
+    function update_stored_session (new_data, new_index) {
+        students = new_data;
+        current_index = 0;
+        if (angular.isDefined(new_index) && new_index >= 0 &&
+            new_index < new_data.length) {
+            current_index = new_index;
+        }
+        total_graded = 0;
+        total_submitted = 0;
+        for (var i = 0; i < students.length; i++) {
+            var current_student = students[i];
+            if (current_student.not_submitted) {
+                continue;
+            }
+            if (is_graded(current_student)) {
+                total_graded++;
+            }
+            total_submitted++;
+        }
+        return skip_until_valid();
+    }
 
     // update the feedback of a student locally
     function update_feedback (student_index, feedback, grade, anchors) {

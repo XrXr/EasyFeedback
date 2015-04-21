@@ -1,6 +1,6 @@
 angular.module("easyFeedback").
 controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
-                                   TemplateManager, FeedbackStorage) {
+                                   TemplateManager, SessionManager) {
     $scope.anchor_list = [];
 
     $scope.on_editor = function (editor) {
@@ -8,13 +8,6 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
         var doc = session.getDocument();
         var Range = ace.require("ace/range").Range;
 
-        editor.on("change", emit_change);
-        $rootScope.$on("reset_editor", reset_editor);
-        $rootScope.$on("replace_current_line", replace_current_line);
-        $rootScope.$on("view_feedback", view_feedback);
-        $rootScope.$on("focus_editor", focus_editor);
-        $rootScope.$on("commit_feedback", commit_feedback);
-        $rootScope.$on("commit_and_advance", commit_and_advance);
         // initialize the editor after fetching the current template
         // TODO: some notice about loading the template
         TemplateManager.fetch_current().then(initialize_editor);
@@ -31,7 +24,15 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
         function initialize_editor () {
             editor.on("change", update_total);
             reset_editor();
-            // the first reset doesn't fire the event with the value properly
+            editor.on("change", emit_change);
+            $rootScope.$on("reset_editor", reset_editor);
+            $rootScope.$on("replace_current_line", replace_current_line);
+            $rootScope.$on("view_feedback", view_feedback);
+            $rootScope.$on("focus_editor", focus_editor);
+            $rootScope.$on("commit_feedback", commit_feedback);
+            $rootScope.$on("commit_and_advance", commit_and_advance);
+            // the first reset doesn't fire the event with the value properly,
+            // thus the timout hack
             $timeout(emit_change, 0);
         }
 
@@ -120,7 +121,7 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
 
         function commit_and_advance () {
             var info = extract_info();
-            FeedbackStorage.advance(info.text, info.total_grade, info.anchors);
+            SessionManager.advance(info.text, info.total_grade, info.anchors);
             reset_editor();
         }
 
@@ -180,7 +181,7 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
         function view_feedback (_, student) {
             var anchors = student.anchors;
             var feedback = student.feedback;
-            if (!FeedbackStorage.is_graded(student) || !anchors) {
+            if (!SessionManager.is_graded(student) || !anchors) {
                 return reset_editor();
             }
             no_update(function () {
@@ -198,8 +199,8 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
 
         function commit_feedback () {
             var info = extract_info();
-            FeedbackStorage.commit_feedback(info.text, info.total_grade,
-                                            info.anchors);
+            SessionManager.commit_feedback(info.text, info.total_grade,
+                                           info.anchors);
         }
     };
 
