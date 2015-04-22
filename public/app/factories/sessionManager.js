@@ -36,7 +36,7 @@ factory("SessionManager", function ($http, GradingSessionIdInterceptor) {
           to the server
         */
         commit_feedback: function (feedback, grade, anchors) {
-            update_feedback(feedback, grade, anchors);
+            update_feedback(current_index, feedback, grade, anchors);
             post_feedback(current_index, current_index);
         },
         /**

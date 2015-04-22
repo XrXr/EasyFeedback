@@ -15,7 +15,7 @@ function predefined_templates () {
 */
 function is_graded (student) {
     var grade = student.grade;
-    return (typeof grade == "string") && grade !== "";
+    return typeof grade == "number";
 }
 
 module.exports = {

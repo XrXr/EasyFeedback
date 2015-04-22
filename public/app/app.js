@@ -10,4 +10,9 @@ run(function (LoginManager, $rootScope) {
             $rootScope.$broadcast("escape_pressed");
         }
     });
+}).
+factory("reload_page", function ($window) {
+    return function () {
+        $window.location.reload();
+    };
 });

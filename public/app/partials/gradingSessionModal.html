@@ -1,0 +1,27 @@
+<div class="template-container">
+  <div class="picker-block" ng-if="!loading && !loading_failed">
+    <input class="form-control" placeholder="Filter by name" ng-model="name_query"></input>
+    <div class="legend-box">
+      <div class="legend submitted"></div><div class="legend-label">Not submitted</label></div>
+      <div class="legend graded"></div><div class="legend-label">Graded</label></div>
+    </div>
+    <div class="session-list">
+      <div ng-repeat="sess in info_list | filter: {name: name_query} track by $index">
+        <span ng-click="change_session(sess)">
+          <a class="clickable" ng-if="sess.name" ng-bind="sess.name"></a>
+          <a class="clickable" ng-if="!sess.name"><i>Unnamed session</i></a>
+        </span>
+        <div class="progress">
+          <div class="progress-bar progress-bar-warning" ng-style="not_submitted_style(sess)"></div>
+          <div class="progress-bar progress-bar-success" ng-style="graded_style(sess)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div ng-if="loading_failed" class="error-block">
+    <i class="fa fa-exclamation fa-5x"></i>
+    <div>Failed to fetch grading sessions :(</div>
+  </div>
+</div>
+<button type="button" class="btn btn-success center-block" ng-click="new_session()">New session</button>

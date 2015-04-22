@@ -104,7 +104,7 @@ router.post("/upload_worksheet", function (req, res, next) {
 });
 
 router.get("/get_status", ensure_grading_session_id);
-router.get("/get_status", retrieve_grading_session, function (req, res) {
+router.get("/get_status", retrieve_grading_session,function (req, res) {
     var sess = req.easy_feedback.grading_session;
     if (!is_in_progress(sess)) {
         return res.error("No worksheet uploaded");
@@ -332,20 +332,41 @@ user_router.get("/all_session_info", function (req, res) {
             grading_session.student_list.forEach(function (student) {
                 if (!student.not_submitted) {
                     submitted++;
-                }
-                if (util.is_graded(student)) {
-                    graded++;
+                    if (util.is_graded(student)) {
+                        graded++;
+                    }
                 }
             });
             return {
+                id: grading_session.id,
                 name: grading_session.name,
-                submitted: submitted,
-                graded: graded
+                total: grading_session.student_list.length,
+                graded: graded,
+                submitted: submitted
             };
         });
         res.json({info: info});
     });
 });
+
+user_router.put("/active_session_id", function (req, res, next) {
+    if (req.body.new_session_id) {
+        req.query.id = req.body.new_session_id;
+        next();
+    }
+    next("route");
+}, retrieve_grading_session, function (req, res, next) {
+    var username = storage.get_username(req.session);
+    if (req.easy_feedback.grading_session.owner !== username) {
+        return end_request(res.status(403));
+    }
+    next();
+});
+user_router.put("/active_session_id", retrieve_user_data);
+user_router.put("/active_session_id", function (req, res, next) {
+    req.easy_feedback.user_data.active_session = req.body.new_session_id;
+    next();
+}, commit_user_data, end_request_m);
 
 router.use("/user", user_router);
 
