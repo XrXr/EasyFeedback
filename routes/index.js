@@ -6,8 +6,8 @@ var babyparse = require("babyparse");
 var fs = require("fs");
 var worksheet = require("../easyfeedback/worksheet");
 var marked = require("marked");
-var utils = require("../easyfeedback/utils");
-var predefined_templates = utils.predefined_templates;
+var util = require("../easyfeedback/util");
+var predefined_templates = util.predefined_templates;
 
 var FEEDBACK_COLUMN = worksheet.FEEDBACK_COLUMN;
 var GRADE_COLUMN = worksheet.GRADE_COLUMN;
@@ -245,8 +245,8 @@ router.post("/logout", function (req, res) {
 });
 
 router.post("/register", function (req, res) {
-    var username = req.body.username;
-    var password = req.body.password;
+    var username = req.body.username || "";
+    var password = req.body.password || "";
     storage.create_user(username, password, function (err, data) {
         if (err) {
             throw err;
@@ -320,17 +320,31 @@ user_router.get("/all_templates", retrieve_user_data, function (req, res) {
     });
 });
 
-user_router.get("/dashboard", function (req, res, next) {
-    req.easy_feedback = {
-        user_data: "mojo"
-    };
-    next();
-}, commit_user_data, function (req, _, next) {
-    delete req.easy_feedback;
-    next();
-}, retrieve_user_data, function (req, res) {
-    console.log(req.easy_feedback);
-    res.send("you've reached your destination!");
+// report some info about the grading sessions a user have
+user_router.get("/all_session_info", function (req, res) {
+    storage.user.retrieve_all_sessions(req.session, function (err, list) {
+        if (err) {
+            throw err;
+        }
+        var info = list.map(function (grading_session) {
+            var submitted = 0;
+            var graded = 0;
+            grading_session.student_list.forEach(function (student) {
+                if (!student.not_submitted) {
+                    submitted++;
+                }
+                if (util.is_graded(student)) {
+                    graded++;
+                }
+            });
+            return {
+                name: grading_session.name,
+                submitted: submitted,
+                graded: graded
+            };
+        });
+        res.json({info: info});
+    });
 });
 
 router.use("/user", user_router);

@@ -10,6 +10,15 @@ function predefined_templates () {
     ];
 }
 
+/*
+  Return true if a student is considered "graded"
+*/
+function is_graded (student) {
+    var grade = student.grade;
+    return (typeof grade == "string") && grade !== "";
+}
+
 module.exports = {
-    predefined_templates: predefined_templates
+    predefined_templates: predefined_templates,
+    is_graded: is_graded
 };

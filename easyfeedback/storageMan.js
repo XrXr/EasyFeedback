@@ -6,7 +6,7 @@
 */
 var uuid = require("uuid");
 var readConfig = require("./configReader").readConfig;
-var utils = require("../easyfeedback/utils");
+var utils = require("../easyfeedback/util");
 var predefined_templates = utils.predefined_templates;
 
 /*
@@ -39,7 +39,7 @@ function temp_commit (session, data, cb) {
   @param {object} backing - an object that implements the backing storage
     methods. See ./storage_backing/memory for an example
   @return {object} an object with properties session_retrieve,
-    session_update and create_new_session
+    session_update, retrieve_all_sessions, create_new_session
 */
 function make_grading_sess_gates (backing) {
     function session_retrieve (session, key, cb) {
@@ -80,6 +80,9 @@ function make_grading_sess_gates (backing) {
     }
 
     function create_new_session (session, data, cb) {
+        if (!is_login(session)) {
+            return cb(Error("Not a login session"));
+        }
         var id = uuid.v4();
         data.owner = get_username(session);
         data.id = id;
@@ -91,10 +94,20 @@ function make_grading_sess_gates (backing) {
         });
     }
 
+    // Retrieve all sessions owned by the logged in user
+    function retrieve_all_sessions (session, cb) {
+        if (!is_login(session)) {
+            return cb(Error("Not a login session"));
+        }
+        var username = get_username(session);
+        backing.find({owner: username}, cb);
+    }
+
     return {
         session_retrieve: session_retrieve,
         session_update: session_update,
-        create_new_session: create_new_session
+        create_new_session: create_new_session,
+        retrieve_all_sessions: retrieve_all_sessions
     };
 }
 
@@ -276,10 +289,12 @@ function initialize (cb) {
         var session_retrieve = grading_sess_gates.session_retrieve;
         var session_update = grading_sess_gates.session_update;
         var create_new_session = grading_sess_gates.create_new_session;
+        var retrieve_all_sessions = grading_sess_gates.retrieve_all_sessions;
         final_object = {
             temp_retrieve: temp_retrieve,
             temp_commit: temp_commit,
             user: {
+                retrieve_all_sessions: retrieve_all_sessions,
                 session_retrieve: session_retrieve,
                 session_update: session_update,
                 create_new_session: create_new_session,
