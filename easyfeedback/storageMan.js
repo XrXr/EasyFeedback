@@ -8,6 +8,7 @@ var uuid = require("uuid");
 var readConfig = require("./configReader").readConfig;
 var utils = require("../easyfeedback/util");
 var predefined_templates = utils.predefined_templates;
+var bcrypt = require("bcrypt");
 
 /*
   Retrieve from per-session storage
@@ -173,9 +174,22 @@ function get_username (session) {
   @param {function} authenticate - function used to check username and
     password. It should take 3 arguments, username, and callback
 */
-function make_login_function (authenticate, get_user_data) {
+function make_login_function (cred_backing, get_user_data) {
     return function (session, username, password, cb) {
-        authenticate(username, password, function (err, success) {
+        cred_backing.get(username, function (_, hashed) {
+            if (typeof username !== "string") {
+                return cb(TypeError("Username must be string"));
+            }
+            if (typeof password !== "string") {
+                return cb(TypeError("Password must be string"));
+            }
+            if (!hashed) {  // not a user on record
+                return cb(null, false);
+            }
+            bcrypt.compare(password, hashed, mark_session);
+        });
+
+        function mark_session (err, success) {
             if (err) {
                 return cb(err);
             }
@@ -185,7 +199,7 @@ function make_login_function (authenticate, get_user_data) {
                 };
             }
             cb(null, success);
-        });
+        }
     };
 }
 
@@ -193,15 +207,47 @@ function make_login_function (authenticate, get_user_data) {
   Make a function that creates a user in the credential storage and initialize
   some data in the user data backing
 */
-function make_create_user (cred_create_user, set_user_data) {
+function make_create_user (cred_backing, set_user_data) {
     return function (username, password, cb) {
-        cred_create_user(username, password, function (err, status) {
+        if (typeof username !== "string") {
+            return cb(TypeError("Username must be string"));
+        }
+        if (typeof password !== "string") {
+            return cb(TypeError("Password must be string"));
+        }
+        if (username.length < 6) {
+            return cb(null, {
+                success: false,
+                reason: "username_too_short"
+            });
+        }
+        if (password.length < 6) {
+            return cb(null, {
+                success: false,
+                reason: "password_too_short"
+            });
+        }
+        cred_backing.get(username, function (err, pwd) {
             if (err) {
                 return cb(err);
             }
+            if (typeof pwd !== "undefined") {
+                return cb(null, {
+                    success: false, reason: "user_already_exist"
+                });
+            }
+            bcrypt.hash(password, 10, function (err, hashed) {
+                if (err) {
+                    return cb(err);
+                }
+                cred_backing.set(username, hashed, initialize_user);
+            });
+        });
+
+        function initialize_user (err) {
             // failed to create in credential store
-            if (!status.success) {
-                return cb(null, status);
+            if (err) {
+                return cb(err);
             }
             var initial_user_data = {
                 active_session: undefined,
@@ -212,9 +258,9 @@ function make_create_user (cred_create_user, set_user_data) {
                 if (err) {
                     return cb(err);
                 }
-                return cb(null, status);
+                return cb(null, {success: true});
             });
-        });
+        }
     };
 }
 
@@ -229,9 +275,9 @@ function initialize (cb) {
             throw err;
         }
         if (config.backing === "memory") {
-            var mem = require("./storage_backing/memory");
-            use_backing(mem.MemoryStorage, mem.MemoryCredentialStorage,
-                        mem.MemoryStorage);
+            var MemoryStorage =
+                require("./storage_backing/memory").MemoryStorage;
+            use_backing(MemoryStorage, MemoryStorage, MemoryStorage);
         } else {
             throw Error("Unknown backing storage type");
         }
@@ -284,13 +330,11 @@ function initialize (cb) {
     }
 
     function add_login_functions (credential_backing, user_data_backing) {
-        var authenticate = credential_backing.authenticate;
         var user_data_gates = make_user_data_gates(user_data_backing);
-        final_object.login = make_login_function(authenticate,
+        final_object.login = make_login_function(credential_backing,
                                                  user_data_backing.get);
-        final_object.create_user =
-            make_create_user(credential_backing.create_user,
-                             user_data_backing.set);
+        final_object.create_user = make_create_user(credential_backing,
+                                                    user_data_backing.set);
         final_object.user.data_retrieve = user_data_gates.user_data_retrieve;
         final_object.user.data_commit = user_data_gates.user_data_commit;
         cb(null, final_object);
