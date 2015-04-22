@@ -186,6 +186,7 @@ function make_login_function (cred_backing, get_user_data) {
             if (!hashed) {  // not a user on record
                 return cb(null, false);
             }
+            console.log(hashed)
             bcrypt.compare(password, hashed, mark_session);
         });
 
@@ -231,7 +232,7 @@ function make_create_user (cred_backing, set_user_data) {
             if (err) {
                 return cb(err);
             }
-            if (typeof pwd !== "undefined") {
+            if (typeof pwd === "string") {
                 return cb(null, {
                     success: false, reason: "user_already_exist"
                 });
@@ -274,12 +275,30 @@ function initialize (cb) {
         if (err) {
             throw err;
         }
+        var boot_message = "Starting Easy Feedback server using %s for " +
+                           "storage";
         if (config.backing === "memory") {
+            console.log(boot_message, "memory");
             var MemoryStorage =
                 require("./storage_backing/memory").MemoryStorage;
             use_backing(MemoryStorage, MemoryStorage, MemoryStorage);
+        } else if (config.backing === "mongodb") {
+            console.log(boot_message, "Mongodb");
+            var mongo_storage = require("./storage_backing/mongo");
+            mongo_storage.connect(config.mongo_url, use_mongo);
         } else {
             throw Error("Unknown backing storage type");
+        }
+
+        function use_mongo (err, MongoKeyValue) {
+            if (err) {
+                throw err;
+            }
+            use_backing(
+                MongoKeyValue.bind(null, "grading_sessions"),
+                MongoKeyValue.bind(null, "credentials"),
+                MongoKeyValue.bind(null, "user_data")
+            );
         }
     });
 

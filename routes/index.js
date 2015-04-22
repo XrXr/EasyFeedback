@@ -211,7 +211,6 @@ router.post("/login", function (req, res) {
         storage.temp_retrieve(req.session, function (err, grading_session) {
             // transfer the current grading session to the user if it is in
             // progress i.e the user uploaded a worksheet
-            console.log(grading_session.template)
             if (is_in_progress(grading_session)) {
                 storage.user.create_new_session(req.session, grading_session,
                                                 change_active_session);
@@ -352,7 +351,7 @@ user_router.get("/all_session_info", function (req, res) {
 user_router.put("/active_session_id", function (req, res, next) {
     if (req.body.new_session_id) {
         req.query.id = req.body.new_session_id;
-        next();
+        return next();
     }
     next("route");
 }, retrieve_grading_session, function (req, res, next) {
