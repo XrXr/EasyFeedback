@@ -41,22 +41,24 @@ controller("MainEditor", function ($scope, $timeout, $rootScope, Util,
         // TODO: protect from selecting entire anchor line(s) and deleting
         function update_total (delta) {
             $timeout(function () {
-                // protect anchor lines
-                delta = delta.data;
-                var row_changed = delta.range.start.row;
-                var changed_line = session.getLine(row_changed);
-                $scope.anchor_list.forEach(function (anchor) {
-                    if (anchor.ace_anchor.row === row_changed) {
-                        if (!anchor.guard.test(changed_line) ||
-                            (delta.action === "removeText" &&
-                            changed_line === delta.text)) {
-                            return no_update(function () {
-                                session.getUndoManager().undo(true);
-                            });
-                        }
-                    }
+                // // TODO: switch to codemirror and enable this feature. there
+                // // is no way to cancel an edit event in ace
+                // // protect anchor lines
+                // delta = delta.data;
+                // var row_changed = delta.range.start.row;
+                // var changed_line = session.getLine(row_changed);
+                // $scope.anchor_list.forEach(function (anchor) {
+                //     if (anchor.ace_anchor.row === row_changed) {
+                //         if (!anchor.guard.test(changed_line) ||
+                //             (delta.action === "removeText" &&
+                //             changed_line === delta.text)) {
+                //             return no_update(function () {
+                //                 session.getUndoManager().undo(true);
+                //             });
+                //         }
+                //     }
 
-                });
+                // });
                 // update the total
                 var total = 0;
                 var total_anchor = $scope.total_anchor.ace_anchor;

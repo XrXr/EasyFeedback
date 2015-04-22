@@ -29,16 +29,8 @@ angular.module("easyFeedback")
             }
             match = entry_re.exec(line);
             if (match) {
-                var guard = "";
                 var anchor_info = [i, match.index];
                 str_array[i] = str_array[i].replace(entry_re, "");
-                guard = ["^",
-                         XRegExp.escape(str_array[i].substr(0, match.index)),
-                         num_input_pattern,
-                         XRegExp.escape(str_array[i].substr(match.index)),
-                         "$"].join("");
-                // trading space for speed here. Each line can't be that long
-                anchor_info.guard = new RegExp(guard);
                 entry_anchors.push(anchor_info);
             }
         }
@@ -97,6 +89,15 @@ angular.module("easyFeedback")
         return $http.put("/change_current_template", {
             new_template: raw_template
         });
+    }
+
+    function construct_guard (line, split_point) {
+        var pattern = [
+            "^", XRegExp.escape(line.substr(0, split_point)),
+            num_input_pattern,
+            XRegExp.escape(line.substr(split_point)), "$"
+        ].join("");
+        return new RegExp(pattern);
     }
 
     /*
