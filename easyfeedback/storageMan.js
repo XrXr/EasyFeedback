@@ -166,27 +166,6 @@ function get_username (session) {
     return session._user.username;
 }
 
-function get_active_grading_sess (session) {
-    if (!is_login(session)) {
-        throw Error("Not a login session");
-    }
-    return session._user.data.active_grading_session;
-}
-
-function has_active_grading_session (session) {
-    if (!is_login(session)) {
-        return false;
-    }
-    var active_grading_session = get_active_grading_sess(session);
-    return typeof active_grading_session === "string";
-}
-
-function set_active_grading_sess (session, grading_sess_id) {
-    if (!is_login(session)) {
-        throw Error("Not a login session");
-    }
-    session._user.data.active_grading_session = grading_sess_id;
-}
 
 /*
   Return a function used for marking a session as a log in session and storing
@@ -298,8 +277,6 @@ function initialize (cb) {
                 session_retrieve: session_retrieve,
                 session_update: session_update,
                 create_new_session: create_new_session,
-                set_active_grading_sess: set_active_grading_sess,
-                get_active_grading_sess: get_active_grading_sess
             },
             is_login: is_login,
             get_username: get_username
