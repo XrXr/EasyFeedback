@@ -12,6 +12,12 @@ controller("NavBar", function ($scope, ngDialog, LoginManager, $rootScope) {
         });
     };
 
+    $scope.show_hotkeys = function () {
+        ngDialog.open({
+            template: "app/partials/hotkeysModal.html",
+        });
+    };
+
     $scope.show_user_menu = function () {
         // see UserMenu controller
         $rootScope.$broadcast("show_user_menu");
